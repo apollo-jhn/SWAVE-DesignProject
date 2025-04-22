@@ -3,10 +3,11 @@ import { HashRouter as Router, Routes, Route } from "react-router";
 
 import { Home_page } from "./pages/page_homepage";
 import { Options_page } from "./pages/page_options";
-import {Recycle_page} from "./pages/page_recycle";
-import {Coin_page} from "./pages/page_coin";
+import { Recycle_page } from "./pages/page_recycle";
+import { Coin_page } from "./pages/page_coin";
 import { Refilling_page } from "./pages/page_refilling";
 import { ThankYou_page } from "./pages/page_thankyou";
+import { Redeem_page } from "./pages/page_redeem";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/coin" element={<Coin_page />} />
         <Route path="/refilling" element={<Refilling_page />} />
         <Route path="/thankyou" element={<ThankYou_page />} />
+        <Route path="/redeem" element={<Redeem_page />} />
       </Routes>
     </Router>
   );
