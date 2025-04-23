@@ -1,17 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function Coin_page() {
+  const [selectedOffer, setData] = useState({ volume: "", price: "" });
   const navigate = useNavigate();
 
-  // Mock data - would come from props or state in a real app
-  const selectedOffer = {
-    size: "500ml",
-    price: 50,
-  };
+  useEffect(() => {
+    fetch("http://localhost:5000/app/selection") // Replace with your API
+      .then((res) => res.json())
+      .then((json) => {
+        setData(json); // json should be { volume: "...", price: ... }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch data:", err);
+      });
+  }, []);
 
-  const [insertedAmount, setInsertedAmount] = useState(50);
-  const remainingAmount = selectedOffer.price - insertedAmount;
+  // Coin inserted |  Update every 250ms
+  const [insertedAmount, setInsertedAmount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // TODO: Update Inserted Coin Placeholder 
+      fetch("http://localhost:5000/app/coin") // Replace with your API
+      .then((res) => res.json())
+      .then((json) => {
+        setInsertedAmount(json.amount); // json should be { volume: "...", price: ... }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch data:", err);
+      });
+    }, 250);
+
+    // Clearinterval to avoid memory leaks
+    return () => clearInterval(interval);
+  }, []);
+
+  
+  const remainingAmount = parseInt(selectedOffer.price.replace("₱", ""), 10) - insertedAmount;
 
   const handleBack = () => {
     navigate(-1);
@@ -57,23 +82,23 @@ export function Coin_page() {
         <h2 className="text-xl font-bold uppercase mb-2">Your Selection</h2>
         <div className="grid grid-cols-2 gap-2">
           <p className="font-bold">Size:</p>
-          <p>{selectedOffer.size}</p>
+          <p>{selectedOffer.volume}</p>
           <p className="font-bold">Total:</p>
-          <p>₱{selectedOffer.price}</p>
+          <p>{selectedOffer.price}</p>
         </div>
       </div>
 
       {/* Action Button */}
       <button
         className={`w-full py-3 rounded-lg font-bold text-xl ${
-          insertedAmount >= selectedOffer.price
+          insertedAmount >= parseInt(selectedOffer.price.replace("₱", ""), 10)
             ? "bg-green-600 hover:bg-green-700"
             : "bg-gray-400 cursor-not-allowed"
         } text-white`}
         onClick={handleRefill}
-        disabled={insertedAmount < selectedOffer.price}
+        disabled={insertedAmount < parseInt(selectedOffer.price.replace("₱", ""), 10)}
       >
-        {insertedAmount >= selectedOffer.price
+        {insertedAmount >= parseInt(selectedOffer.price.replace("₱", ""), 10)
           ? "Confirm Refill"
           : "Insufficient Funds"}
       </button>
