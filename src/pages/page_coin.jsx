@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 
 export function Coin_page() {
   const navigate = useNavigate();
-  
+
   // Mock data - would come from props or state in a real app
   const selectedOffer = {
     size: "500ml",
-    price: 50
+    price: 50,
   };
-  
-  const [insertedAmount, setInsertedAmount] = useState(20);
+
+  const [insertedAmount, setInsertedAmount] = useState(50);
   const remainingAmount = selectedOffer.price - insertedAmount;
 
   const handleBack = () => {
@@ -25,7 +25,7 @@ export function Coin_page() {
   return (
     <div className="flex flex-col justify-between p-4 bg-gray-50 overflow-hidden relative">
       {/* Back Button */}
-      <button 
+      <button
         onClick={handleBack}
         className="absolute top-4 left-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg z-10"
         aria-label="Go back"
@@ -41,11 +41,13 @@ export function Coin_page() {
 
       {/* Payment Display */}
       <div className="flex flex-col items-center justify-center mb-4 p-4 bg-blue-900 rounded-lg">
-        <h2 className="text-2xl font-bold uppercase text-white">Amount Inserted</h2>
+        <h2 className="text-2xl font-bold uppercase text-white">
+          Amount Inserted
+        </h2>
         <p className="text-5xl font-bold text-white my-2">₱{insertedAmount}</p>
         <p className="text-xl text-blue-200">
-          {remainingAmount > 0 
-            ? `Remaining: ₱${remainingAmount}` 
+          {remainingAmount > 0
+            ? `Remaining: ₱${remainingAmount}`
             : "Payment received"}
         </p>
       </div>
@@ -62,17 +64,17 @@ export function Coin_page() {
       </div>
 
       {/* Action Button */}
-      <button 
+      <button
         className={`w-full py-3 rounded-lg font-bold text-xl ${
           insertedAmount >= selectedOffer.price
-            ? 'bg-green-600 hover:bg-green-700'
-            : 'bg-gray-400 cursor-not-allowed'
+            ? "bg-green-600 hover:bg-green-700"
+            : "bg-gray-400 cursor-not-allowed"
         } text-white`}
         onClick={handleRefill}
         disabled={insertedAmount < selectedOffer.price}
       >
-        {insertedAmount >= selectedOffer.price 
-          ? "Confirm Refill" 
+        {insertedAmount >= selectedOffer.price
+          ? "Confirm Refill"
           : "Insufficient Funds"}
       </button>
     </div>

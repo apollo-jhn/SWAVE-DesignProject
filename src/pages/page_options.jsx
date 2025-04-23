@@ -25,10 +25,31 @@ export function Options_page() {
 
   const handleProceed = () => {
     if (selectedOption !== null) {
-      navigate("/coin")
-      // alert(`Proceeding with ${volumeOptions[selectedOption].size} for ${volumeOptions[selectedOption].price}`);
+      const selectedVolume = volumeOptions[selectedOption];
+      const requestData = {
+        volume: selectedVolume.size,
+        price: selectedVolume.price
+      };
+  
+      // Send POST request to backend
+      fetch("http://localhost:5000/app", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Success:", data);
+        navigate("/coin"); // Navigate only after POST completes
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
     }
   };
+  
 
   const handleBack = () => {
     navigate(-1); // Go back to previous page
