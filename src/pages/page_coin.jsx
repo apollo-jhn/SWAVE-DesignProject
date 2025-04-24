@@ -38,10 +38,6 @@ export function Coin_page() {
   
   const remainingAmount = parseInt(selectedOffer.price.replace("₱", ""), 10) - insertedAmount;
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleRefill = () => {
     // Refill logic would go here
     alert("Dispensing your water...");
@@ -49,15 +45,6 @@ export function Coin_page() {
 
   return (
     <div className="flex flex-col justify-between p-4 bg-gray-50 overflow-hidden relative">
-      {/* Back Button */}
-      <button
-        onClick={handleBack}
-        className="absolute top-4 left-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg z-10"
-        aria-label="Go back"
-      >
-        ← Return
-      </button>
-
       {/* Title Section */}
       <header className="text-center mb-2 mt-2">
         <h1 className="text-3xl font-bold text-blue-900">Payment</h1>
