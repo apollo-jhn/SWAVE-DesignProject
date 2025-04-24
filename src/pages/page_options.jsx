@@ -32,7 +32,7 @@ export function Options_page() {
       };
   
       // Send POST request to backend
-      fetch("http://localhost:5000/app/selection", {
+      fetch("http://localhost:5000/data/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
