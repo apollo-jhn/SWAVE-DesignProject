@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { sendRequest } from "../utils/api";
 
 export function Redeem_page() {
   const navigate = useNavigate();
@@ -11,8 +12,8 @@ export function Redeem_page() {
     let timer;
     if (showSuccess) {
       timer = setTimeout(() => {
-        navigate("/thankyou", { 
-          state: { message: "Thank you for helping the environment." } 
+        navigate("/thankyou", {
+          state: { message: "Thank you for helping the environment." },
         });
       }, 5000);
     }
@@ -34,15 +35,13 @@ export function Redeem_page() {
   };
 
   const handleRedeem = () => {
-    if (activeIndex === 4) {
-      setShowSuccess(true);
-    }
+    // setShowSuccess(true);
   };
 
   const handleProceed = () => {
     setShowSuccess(false);
-    navigate("/thankyou", { 
-      state: { message: "Thank you for helping the environment." } 
+    navigate("/thankyou", {
+      state: { message: "Thank you for helping the environment." },
     });
   };
 
@@ -69,7 +68,7 @@ export function Redeem_page() {
 
       {/* Header Section */}
       <div className="flex flex-col items-center mb-3">
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="self-start bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded-lg"
         >
@@ -83,11 +82,11 @@ export function Redeem_page() {
       <div className="flex justify-center mb-4">
         <div className="flex space-x-3">
           {code.map((digit, index) => (
-            <div 
+            <div
               key={index}
               className={`text-black w-16 h-16 border-2 rounded flex items-center justify-center text-3xl font-bold ${
-                index === activeIndex 
-                  ? "border-blue-500 bg-blue-100" 
+                index === activeIndex
+                  ? "border-blue-500 bg-blue-100"
                   : "border-gray-300 bg-white"
               }`}
             >

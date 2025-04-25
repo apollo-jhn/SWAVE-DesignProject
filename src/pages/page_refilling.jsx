@@ -6,26 +6,49 @@ export function Refilling_page() {
   const [progress, setProgress] = useState(0);
   const [isFilling, setIsFilling] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [timeInterval, setTimeInterval] = useState(2000); // Default fallback value in ms
+
+  // Get the time interval of the loading screen from the backend
+  useEffect(() => {
+    const requestData = {
+      request: ["interval"]
+    };
+    fetch("http://localhost:5000/data/receive", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setTimeInterval(data.interval);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }, []); // Added empty dependency array to run only once
 
   useEffect(() => {
     let interval;
-    
+    const increment = 100 / (timeInterval / 200); // Calculate increment based on total time
+
     if (isFilling) {
       interval = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 100) {
             clearInterval(interval);
             setIsFilling(false);
             setShowSuccess(true);
             return 100;
           }
-          return prev + 2;
+          return prev + increment;
         });
-      }, 200);
+      }, 200); // Update every 200ms for smooth animation
     }
 
     return () => clearInterval(interval);
-  }, [isFilling]);
+  }, [isFilling, timeInterval]); // Added timeInterval to dependencies
 
   useEffect(() => {
     if (showSuccess) {
@@ -53,7 +76,7 @@ export function Refilling_page() {
       <div className="flex-1 flex flex-col items-center justify-center p-1">
         {/* Compact Water Bottle */}
         <div className="relative w-24 h-40 border-3 border-blue-300 rounded-b-lg rounded-t-full overflow-hidden bg-blue-50">
-          <div 
+          <div
             className="absolute bottom-0 w-full bg-blue-400 transition-all duration-300"
             style={{ height: `${progress}%` }}
           >
@@ -65,13 +88,13 @@ export function Refilling_page() {
 
         {/* Compact Progress Bar */}
         <div className="w-4/5 mt-2 bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-blue-600 h-2 rounded-full" 
+          <div
+            className="bg-blue-600 h-2 rounded-full"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
-        
-        <p className="text-lg font-bold text-blue-800 mt-1">{progress}%</p>
+
+        <p className="text-lg font-bold text-blue-800 mt-1">{Math.round(progress)}%</p>
       </div>
 
       {/* Action Buttons */}
@@ -84,7 +107,7 @@ export function Refilling_page() {
             STOP
           </button>
         )}
-        
+
         {showSuccess && (
           <button
             onClick={() => navigate("/thankyou")}

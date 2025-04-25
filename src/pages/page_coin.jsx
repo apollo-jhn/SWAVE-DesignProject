@@ -6,13 +6,23 @@ export function Coin_page() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:5000/app/selection") // Replace with your API
-      .then((res) => res.json())
-      .then((json) => {
-        setData(json); // json should be { volume: "...", price: ... }
+    // Get the volume and price
+    const requestData = {
+      request: ["volume", "price"],
+    };
+    fetch("http://localhost:5000/data/receive", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setData(data);
       })
-      .catch((err) => {
-        console.error("Failed to fetch data:", err);
+      .catch((error) => {
+        console.error("Error:", error);
       });
   }, []);
 
@@ -20,27 +30,55 @@ export function Coin_page() {
   const [insertedAmount, setInsertedAmount] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
-      // TODO: Update Inserted Coin Placeholder 
-      fetch("http://localhost:5000/app/coin") // Replace with your API
-      .then((res) => res.json())
-      .then((json) => {
-        setInsertedAmount(json.amount); // json should be { volume: "...", price: ... }
+      const requestData = {
+        request: ["amount"],
+      };
+      fetch("http://localhost:5000/data/receive", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
       })
-      .catch((err) => {
-        console.error("Failed to fetch data:", err);
-      });
-    }, 250);
+        .then((response) => response.json())
+        .then((data) => {
+          setInsertedAmount(data.amount);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }, 375);
 
     // Clearinterval to avoid memory leaks
     return () => clearInterval(interval);
   }, []);
 
-  
-  const remainingAmount = parseInt(selectedOffer.price.replace("₱", ""), 10) - insertedAmount;
+  const remainingAmount =
+    parseInt(selectedOffer.price.replace("₱", ""), 10) - insertedAmount;
 
   const handleRefill = () => {
-    // Refill logic would go here
-    alert("Dispensing your water...");
+    // First send the dispense request
+    fetch("http://localhost:5000/function/dispense")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Dispense response:", data);
+        if (data.status === "Successful") {
+          // Only navigate if the dispense was successful
+          navigate("/refilling");
+        } else {
+          console.error("Dispense failed:", data);
+          // You might want to show an error message to the user here
+        }
+      })
+      .catch((error) => {
+        console.error("Error during dispense:", error);
+        // You might want to show an error message to the user here
+      });
   };
 
   return (
@@ -68,10 +106,10 @@ export function Coin_page() {
       <div className="bg-blue-100 text-black rounded-lg p-4 mb-4">
         <h2 className="text-xl font-bold uppercase mb-2">Your Selection</h2>
         <div className="grid grid-cols-2 gap-2">
-          <p className="font-bold">Size:</p>
-          <p>{selectedOffer.volume}</p>
-          <p className="font-bold">Total:</p>
-          <p>{selectedOffer.price}</p>
+          <p className="font-bold text-xl">Size:</p>
+          <p className="text-xl">{selectedOffer.volume}</p>
+          <p className="font-bold text-xl">Total:</p>
+          <p className="text-xl">{selectedOffer.price}</p>
         </div>
       </div>
 
@@ -83,7 +121,9 @@ export function Coin_page() {
             : "bg-gray-400 cursor-not-allowed"
         } text-white`}
         onClick={handleRefill}
-        disabled={insertedAmount < parseInt(selectedOffer.price.replace("₱", ""), 10)}
+        disabled={
+          insertedAmount < parseInt(selectedOffer.price.replace("₱", ""), 10)
+        }
       >
         {insertedAmount >= parseInt(selectedOffer.price.replace("₱", ""), 10)
           ? "Confirm Refill"

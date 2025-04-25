@@ -6,14 +6,14 @@ const MODES = [
     title: "Buy Water",
     path: "/options",
     image: "assets/images/a_glass_of_water.jpeg",
-    alt: "Glass of water"
+    alt: "Glass of water",
   },
   {
     title: "Recycle Plastic Bottle",
     path: "/recycle",
     image: "assets/images/plastic_bottles.jpeg",
-    alt: "Plastic bottles"
-  }
+    alt: "Plastic bottles",
+  },
 ];
 
 export function Home_page() {
@@ -23,7 +23,7 @@ export function Home_page() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await fetch('http://localhost:5000/ping');
+        const response = await fetch("http://localhost:5000/ping");
         const data = await response.json();
         if (data.message === "Ping Successful!") {
           setIsBackendAvailable(true);
@@ -44,7 +44,9 @@ export function Home_page() {
       <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gray-50">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-blue-900 mb-4">SWAVE</h1>
-          <p className="text-xl text-gray-700">Checking connection to the machine...</p>
+          <p className="text-xl text-gray-700">
+            Checking connection to the machine...
+          </p>
         </div>
       </div>
     );
@@ -55,7 +57,9 @@ export function Home_page() {
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Brand Section */}
         <div className="flex flex-col space-y-6">
-          <h1 className="text-5xl md:text-6xl font-bold text-center text-blue-900">SWAVE</h1>
+          <h1 className="text-5xl md:text-6xl font-bold text-center text-blue-900">
+            SWAVE
+          </h1>
           <div className="space-y-4">
             <p className="text-lg text-gray-700">
               💦 Stay refreshed and stay hydrated with SWAVE for DFCAM IT Campus
@@ -66,7 +70,9 @@ export function Home_page() {
             {!isBackendAvailable && (
               <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
                 <p className="font-bold">Warning</p>
-                <p>The machine is currently unavailable. Please try again later.</p>
+                <p>
+                  The machine is currently unavailable. Please try again later.
+                </p>
               </div>
             )}
             <p className="text-xl md:text-2xl text-center font-semibold text-blue-800">
@@ -82,10 +88,18 @@ export function Home_page() {
           </h2>
           <div className="grid grid-cols-1 gap-4">
             {MODES.map((mode) => (
-              <div 
+              <div
                 key={mode.path}
-                className={`transition-transform ${isBackendAvailable ? 'hover:scale-[1.02] focus:scale-[1.02]' : 'opacity-70 cursor-not-allowed'}`}
-                aria-label={isBackendAvailable ? `Go to ${mode.title}` : `${mode.title} - Machine unavailable`}
+                className={`transition-transform ${
+                  isBackendAvailable
+                    ? "hover:scale-[1.02] focus:scale-[1.02]"
+                    : "opacity-70 cursor-not-allowed"
+                }`}
+                aria-label={
+                  isBackendAvailable
+                    ? `Go to ${mode.title}`
+                    : `${mode.title} - Machine unavailable`
+                }
               >
                 {isBackendAvailable ? (
                   <Link to={mode.path}>
@@ -131,3 +145,6 @@ export function Home_page() {
     </div>
   );
 }
+
+// TODO: Not enough water dialog showing on Homepage.
+// TODO: PET's storage is full.
