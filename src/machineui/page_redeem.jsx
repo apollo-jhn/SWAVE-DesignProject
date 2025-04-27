@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { sendRequest } from "../utils/api";
 
 export function Redeem_page() {
   const navigate = useNavigate();
   const [code, setCode] = useState(["", "", "", ""]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [apiResponse, setApiResponse] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let timer;
-    if (showSuccess) {
+    if (apiResponse?.status === "good") {
       timer = setTimeout(() => {
-        navigate("/thankyou", {
-          state: { message: "Thank you for helping the environment." },
+        navigate("/machineui/thankyou", {
+          state: {
+            message: "Points were added to your account successfully.",
+          },
         });
       }, 5000);
     }
     return () => clearTimeout(timer);
-  }, [showSuccess, navigate]);
+  }, [apiResponse, navigate]);
 
   const handleNumberClick = (num) => {
     if (activeIndex < 4) {
@@ -34,35 +36,90 @@ export function Redeem_page() {
     setActiveIndex(0);
   };
 
-  const handleRedeem = () => {
-    // setShowSuccess(true);
+  const handleRedeem = async () => {
+    if (activeIndex !== 4) return;
+    
+    setIsLoading(true);
+    try {
+      const codeString = code.join("");
+      const response = await fetch("http://localhost:5000/recycling/addpoints", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          request: "addpoints",
+          code: codeString
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      setApiResponse({
+        message: data.message || "Points added successfully",
+        status: data.status || "good"
+      });
+    } catch (error) {
+      setApiResponse({
+        message: error.message || "Failed to redeem points. Please try again.",
+        status: "failed"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleProceed = () => {
-    setShowSuccess(false);
-    navigate("/thankyou", {
-      state: { message: "Thank you for helping the environment." },
-    });
+  const handleDialogClose = () => {
+    if (apiResponse?.status === "good") {
+      navigate("/machineui/thankyou", {
+        state: {
+          message: "Points were added to your account successfully.",
+        },
+      });
+    } else {
+      setApiResponse(null);
+      handleClear();
+    }
   };
 
   return (
     <div className="flex flex-col justify-between p-3 bg-gray-50 w-full h-full overflow-hidden relative">
-      {/* Success Dialog */}
-      {showSuccess && (
+      {/* API Response Dialog */}
+      {apiResponse && (
         <div className="absolute inset-0 backdrop-blur-xl backdrop-brightness-50 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-xs text-center">
-            <h2 className="text-2xl font-bold text-green-600 mb-3">Success!</h2>
-            <p className="text-xl text-black mb-4">Points have been redeemed</p>
-            <p className="text-sm text-gray-500 mb-4">
-              Continuing in 5 seconds...
-            </p>
+            <h2 className={`text-2xl font-bold mb-3 ${
+              apiResponse.status === "good" ? "text-green-600" : "text-red-600"
+            }`}>
+              {apiResponse.status === "good" ? "Success!" : "Error"}
+            </h2>
+            <p className="text-xl text-black mb-4">{apiResponse.message}</p>
+            
+            {apiResponse.status === "good" && (
+              <p className="text-sm text-gray-500 mb-4">
+                Continuing in 5 seconds...
+              </p>
+            )}
+            
             <button
-              onClick={handleProceed}
-              className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-xl"
+              onClick={handleDialogClose}
+              className={`w-full py-2 ${
+                apiResponse.status === "good" ? "bg-green-600" : "bg-blue-600"
+              } text-white font-bold rounded-lg text-xl`}
             >
-              Proceed Now
+              {apiResponse.status === "good" ? "Proceed Now" : "OK"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="absolute inset-0 backdrop-blur-sm bg-white bg-opacity-50 flex items-center justify-center z-40">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       )}
 
@@ -124,14 +181,14 @@ export function Redeem_page() {
       {/* Redeem Button */}
       <button
         onClick={handleRedeem}
-        disabled={activeIndex !== 4}
+        disabled={activeIndex !== 4 || isLoading}
         className={`w-full py-2 rounded font-bold ${
           activeIndex === 4
             ? "bg-green-600 hover:bg-green-700"
             : "bg-gray-400 cursor-not-allowed"
         } text-white text-xl`}
       >
-        Redeem Points
+        {isLoading ? "Processing..." : "Redeem Points"}
       </button>
     </div>
   );

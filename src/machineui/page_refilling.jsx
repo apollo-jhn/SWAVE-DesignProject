@@ -52,7 +52,7 @@ export function Refilling_page() {
 
   useEffect(() => {
     if (showSuccess) {
-      const timer = setTimeout(() => navigate("/thankyou"), 2000);
+      const timer = setTimeout(() => navigate("/machineui/thankyou"), 2000);
       return () => clearTimeout(timer);
     }
   }, [showSuccess, navigate]);
@@ -110,7 +110,7 @@ export function Refilling_page() {
 
         {showSuccess && (
           <button
-            onClick={() => navigate("/thankyou")}
+            onClick={() => navigate("/machineui/thankyou")}
             className="w-full py-2 rounded-lg font-bold text-lg bg-green-600 text-white"
           >
             CONTINUE

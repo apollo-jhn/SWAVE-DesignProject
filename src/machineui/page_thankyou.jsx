@@ -10,7 +10,7 @@ export function ThankYou_page() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/");
+      navigate("/machineui");
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -28,7 +28,7 @@ export function ThankYou_page() {
           Returning to home in 5 seconds...
         </p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/machineui")}
           className="w-full py-3 rounded-lg font-bold text-xl bg-blue-600 hover:bg-blue-700 text-white"
         >
           Return to Home Now

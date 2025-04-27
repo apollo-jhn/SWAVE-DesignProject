@@ -4,13 +4,13 @@ import { Link } from "react-router-dom";
 const MODES = [
   {
     title: "Buy Water",
-    path: "/options",
+    path: "/machineui/options",
     image: "assets/images/a_glass_of_water.jpeg",
     alt: "Glass of water",
   },
   {
     title: "Recycle Plastic Bottle",
-    path: "/recycle",
+    path: "/machineui/recycle",
     image: "assets/images/plastic_bottles.jpeg",
     alt: "Plastic bottles",
   },

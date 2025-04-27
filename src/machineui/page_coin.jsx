@@ -69,7 +69,7 @@ export function Coin_page() {
         console.log("Dispense response:", data);
         if (data.status === "Successful") {
           // Only navigate if the dispense was successful
-          navigate("/refilling");
+          navigate("/machineui/refilling");
         } else {
           console.error("Dispense failed:", data);
           // You might want to show an error message to the user here

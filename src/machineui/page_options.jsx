@@ -42,7 +42,7 @@ export function Options_page() {
         .then((response) => response.json())
         .then((data) => {
           console.log("Success:", data);
-          navigate("/coin"); // Navigate only after POST completes
+          navigate("/machineui/coin");
         })
         .catch((error) => {
           console.error("Error:", error);

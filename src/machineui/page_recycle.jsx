@@ -49,7 +49,7 @@ export function Recycle_page() {
     clearPollingInterval();
     postRequest("http://localhost:5000/function/call", ["clear_recycleData"])
       .then(() => {
-        navigate("/thankyou", {
+        navigate("/machineui/thankyou", {
           state: {
             message:
               "Thank you for your donation! And your effort on saving the environment.",
@@ -63,7 +63,7 @@ export function Recycle_page() {
 
   const toRedeemPoints = () => {
     clearPollingInterval();
-    navigate("/redeem");
+    navigate("/machineui/redeem");
   };
 
   return (
