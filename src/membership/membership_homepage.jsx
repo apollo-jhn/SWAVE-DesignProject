@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-export function Homepage() {
+export function Membership_Homepage() {
     return (
         <div className="min-h-screen flex flex-col bg-gray-100">
             {/* Main Content */}
