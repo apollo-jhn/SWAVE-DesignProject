@@ -3,12 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { postRequest } from "../tools/api_request";
 
 export function MachineUI_Buy_Option() {
-    // State management
     const [selectedOption, setSelectedOption] = useState(null);
     const [isLocked, setIsLocked] = useState(false);
     const navigate = useNavigate();
 
-    // Constants
     const volumeOptions = [
         { size: "350ml", price: "₱35" },
         { size: "500ml", price: "₱50" },
@@ -16,7 +14,6 @@ export function MachineUI_Buy_Option() {
         { size: "1000ml", price: "₱99" },
     ];
 
-    // Event handlers
     const handleOptionClick = (index) => {
         if (!isLocked) {
             setSelectedOption(selectedOption === index ? null : index);
@@ -30,12 +27,10 @@ export function MachineUI_Buy_Option() {
     const handleProceed = async () => {
         if (selectedOption === null) return;
 
-        const selectedVolume = volumeOptions[selectedOption];
-        
         try {
             const response = await postRequest("/data/put", {
-                volume: selectedVolume.size,
-                price: selectedVolume.price,
+                volume: volumeOptions[selectedOption].size,
+                price: volumeOptions[selectedOption].price,
             });
 
             if (response.status === "success") {
@@ -46,11 +41,8 @@ export function MachineUI_Buy_Option() {
         }
     };
 
-    const handleBack = () => {
-        navigate(-1);
-    };
+    const handleBack = () => navigate(-1);
 
-    // UI Components
     const BackButton = () => (
         <button
             onClick={handleBack}
@@ -70,51 +62,67 @@ export function MachineUI_Buy_Option() {
 
     const VolumeButtons = () => (
         <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
-            {volumeOptions.map((option, index) => (
+            {volumeOptions.map((option, index) => {
+                const isSelected = selectedOption === index;
+                const buttonClasses = [
+                    "rounded-lg p-2 flex flex-col items-center justify-center transition-all",
+                    isSelected 
+                        ? isLocked ? "bg-blue-700" : "bg-blue-600"
+                        : isLocked ? "bg-blue-900 opacity-70" : "bg-blue-900 hover:bg-blue-800",
+                    isLocked ? "cursor-not-allowed" : "cursor-pointer"
+                ].join(" ");
+
+                return (
+                    <button
+                        key={option.size}
+                        className={buttonClasses}
+                        onClick={() => handleOptionClick(index)}
+                        disabled={isLocked}
+                    >
+                        <p className="text-white font-bold text-4xl">{option.size}</p>
+                        <p className="text-white text-3xl">{option.price}</p>
+                    </button>
+                );
+            })}
+        </div>
+    );
+
+    const ActionButtons = () => {
+        const lockButtonClasses = [
+            "w-full py-3 rounded-lg font-bold text-xl text-white",
+            selectedOption !== null
+                ? isLocked ? "bg-yellow-600 hover:bg-yellow-700" 
+                           : "bg-green-600 hover:bg-green-700"
+                : "bg-gray-400 cursor-not-allowed"
+        ].join(" ");
+
+        const proceedButtonClasses = [
+            "w-full py-3 rounded-lg font-bold text-xl text-white",
+            isLocked ? "bg-purple-600 hover:bg-purple-700" 
+                     : "bg-gray-400 cursor-not-allowed"
+        ].join(" ");
+
+        return (
+            <div className="flex flex-col gap-3 mt-3">
                 <button
-                    key={option.size}
-                    className={`rounded-lg p-2 flex flex-col items-center justify-center transition-all ${
-                        selectedOption === index
-                            ? isLocked ? "bg-blue-700" : "bg-blue-600"
-                            : isLocked ? "bg-blue-900 opacity-70" : "bg-blue-900 hover:bg-blue-800"
-                    } ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
-                    onClick={() => handleOptionClick(index)}
-                    disabled={isLocked}
+                    className={lockButtonClasses}
+                    onClick={toggleLockOption}
+                    disabled={selectedOption === null}
                 >
-                    <p className="text-white font-bold text-4xl">{option.size}</p>
-                    <p className="text-white text-3xl">{option.price}</p>
+                    {isLocked ? "Unlock" : "Lock Selection"}
                 </button>
-            ))}
-        </div>
-    );
 
-    const ActionButtons = () => (
-        <div className="flex flex-col gap-3 mt-3">
-            <button
-                className={`w-full py-3 rounded-lg font-bold text-xl ${
-                    selectedOption !== null
-                        ? isLocked ? "bg-yellow-600 hover:bg-yellow-700" : "bg-green-600 hover:bg-green-700"
-                        : "bg-gray-400 cursor-not-allowed"
-                } text-white`}
-                onClick={toggleLockOption}
-                disabled={selectedOption === null}
-            >
-                {isLocked ? "Unlock" : "Lock Selection"}
-            </button>
+                <button
+                    className={proceedButtonClasses}
+                    onClick={handleProceed}
+                    disabled={!isLocked}
+                >
+                    Proceed
+                </button>
+            </div>
+        );
+    };
 
-            <button
-                className={`w-full py-3 rounded-lg font-bold text-xl ${
-                    isLocked ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-400 cursor-not-allowed"
-                } text-white`}
-                onClick={handleProceed}
-                disabled={!isLocked}
-            >
-                Proceed
-            </button>
-        </div>
-    );
-
-    // Main render
     return (
         <div className="flex flex-col justify-between p-4 bg-gray-50 overflow-hidden relative">
             <BackButton />

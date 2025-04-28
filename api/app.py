@@ -66,6 +66,11 @@ def getData():
             _return_data["bottle_inserted"] = swave.bottleInserted
         if "points_acquired" in requested_fields:
             _return_data["points_acquired"] = swave.pointsAcquired
+        if "is_storage_full" in requested_fields:
+            _return_data["is_storage_full"] = swave.isStorageFull
+        if "is_water_critical" in requested_fields:
+            _return_data["is_water_critical"] = swave.isWaterOnCritical    
+        
 
         return jsonify(_return_data), 200
     except Exception as e:

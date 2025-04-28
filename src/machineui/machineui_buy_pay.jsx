@@ -7,13 +7,11 @@ export function MachineUI_Buy_Pay() {
     const [insertedAmount, setInsertedAmount] = useState(0);
     const navigate = useNavigate();
 
-    // Fetch selected offer
+    // Fetch selected offer on component mount
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const requestData = {
-                    request: ["volume", "price"],
-                };
+                const requestData = { request: ["volume", "price"] };
                 const _data = await postRequest("/data/get", requestData);
                 setData(_data);
             } catch (error) {
@@ -25,43 +23,35 @@ export function MachineUI_Buy_Pay() {
 
     // Poll for inserted coins
     useEffect(() => {
-        const interval = setInterval(() => {
-            const _fetchData = async () => {
-                try {
-                    const _requestData = {
-                        request: ["inserted_amount"],
-                    };
-                    const _data = await postRequest("/data/get", _requestData);
-                    setInsertedAmount(_data.inserted_amount);
-                } catch (error) {
-                    console.error("Failed to fetch inserted amount:", error);
-                }
-            };
-            _fetchData();
-        }, 375);
+        const fetchInsertedAmount = async () => {
+            try {
+                const _requestData = { request: ["inserted_amount"] };
+                const _data = await postRequest("/data/get", _requestData);
+                setInsertedAmount(_data.inserted_amount);
+            } catch (error) {
+                console.error("Failed to fetch inserted amount:", error);
+            }
+        };
 
+        const interval = setInterval(fetchInsertedAmount, 375);
         return () => clearInterval(interval);
     }, []);
 
-    const remainingAmount =
-        parseInt(selectedOffer.price.replace("₱", ""), 10) - insertedAmount;
+    const priceValue = parseInt(selectedOffer.price.replace("₱", ""), 10);
+    const remainingAmount = priceValue - insertedAmount;
+    const isPaymentComplete = insertedAmount >= priceValue;
 
     const handleRefill = async () => {
         try {
-            const _calling_function = {
-                function: ["dispense_water"],
-            };
-            const _data = await postRequest(
-                "/function/call",
-                _calling_function
-            );
-            if (_data.status == "success") {
+            const _calling_function = { function: ["dispense_water"] };
+            const _data = await postRequest("/function/call", _calling_function);
+            
+            if (_data.status === "success") {
                 navigate("/machineui/buy/dispense");
             }
         } catch (error) {
-            console.error("Failed to call the function dispense water:", error);
+            console.error("Failed to call dispense water function:", error);
         }
-        _fetchData();
     };
 
     return (
@@ -103,21 +93,14 @@ export function MachineUI_Buy_Pay() {
             {/* Action Button */}
             <button
                 className={`w-full py-3 rounded-lg font-bold text-xl ${
-                    insertedAmount >=
-                    parseInt(selectedOffer.price.replace("₱", ""), 10)
+                    isPaymentComplete
                         ? "bg-green-600 hover:bg-green-700"
                         : "bg-gray-400 cursor-not-allowed"
                 } text-white`}
                 onClick={handleRefill}
-                disabled={
-                    insertedAmount <
-                    parseInt(selectedOffer.price.replace("₱", ""), 10)
-                }
+                disabled={!isPaymentComplete}
             >
-                {insertedAmount >=
-                parseInt(selectedOffer.price.replace("₱", ""), 10)
-                    ? "Confirm Refill"
-                    : "Insufficient Funds"}
+                {isPaymentComplete ? "Confirm Refill" : "Insufficient Funds"}
             </button>
         </div>
     );

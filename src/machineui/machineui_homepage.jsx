@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getRequest } from "../tools/api_request";
+import { getRequest, postRequest } from "../tools/api_request";
 
-// Constants
 const MODES = [
   {
     title: "Buy Water",
@@ -24,7 +23,6 @@ const ConnectionStatus = {
   UNAVAILABLE: "unavailable",
 };
 
-// Components
 const LoadingScreen = () => (
   <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gray-50">
     <div className="text-center">
@@ -103,38 +101,152 @@ const ModeSelectionSection = ({ modes, isBackendAvailable }) => (
   </div>
 );
 
-// Main Component
+const WarningDialog = ({ title, message, onConfirm, isOpen }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+        <h3 className="text-2xl font-bold text-red-600">{title}</h3>
+        <p className="text-gray-700">{message}</p>
+        <div className="flex justify-end">
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function MachineUI_Homepage() {
   const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.LOADING);
+  const [waterCritical, setWaterCritical] = useState(false);
+  const [storageFull, setStorageFull] = useState(false);
+  const [showWaterDialog, setShowWaterDialog] = useState(false);
+  const [showStorageDialog, setShowStorageDialog] = useState(false);
 
   useEffect(() => {
-    const checkBackendConnection = async () => {
+    const checkConnection = async () => {
       try {
-        const data = await getRequest("/ping");
-        setConnectionStatus(
-          data.status === "success" ? ConnectionStatus.AVAILABLE : ConnectionStatus.UNAVAILABLE
-        );
+        const response = await getRequest("/ping");
+        const isAvailable = response.status === "success";
+        setConnectionStatus(isAvailable ? ConnectionStatus.AVAILABLE : ConnectionStatus.UNAVAILABLE);
+        
+        if (isAvailable) {
+          checkMachineStatus();
+        }
       } catch (error) {
-        console.error("Backend connection failed:", error);
+        console.error("Connection check failed:", error);
         setConnectionStatus(ConnectionStatus.UNAVAILABLE);
       }
     };
 
-    checkBackendConnection();
+    const checkMachineStatus = async () => {
+      try {
+        // Check water status
+        const waterResponse = await postRequest("/data/get", {
+          request: ["is_water_critical"]
+        });
+        if (waterResponse.is_water_critical) {
+          setWaterCritical(true);
+          setShowWaterDialog(true);
+        }
+
+        // Check storage status
+        const storageResponse = await postRequest("/data/get", {
+          request: ["is_storage_full"]
+        });
+        if (storageResponse.is_storage_full) {
+          setStorageFull(true);
+          setShowStorageDialog(true);
+        }
+      } catch (error) {
+        console.error("Failed to check machine status:", error);
+      }
+    };
+
+    checkConnection();
   }, []);
+
+  const handleWaterDialogConfirm = () => {
+    setShowWaterDialog(false);
+  };
+
+  const handleStorageDialogConfirm = () => {
+    setShowStorageDialog(false);
+  };
 
   if (connectionStatus === ConnectionStatus.LOADING) {
     return <LoadingScreen />;
   }
 
   const isBackendAvailable = connectionStatus === ConnectionStatus.AVAILABLE;
+  const isBuyWaterDisabled = waterCritical || !isBackendAvailable;
+  const isRecycleDisabled = storageFull || !isBackendAvailable;
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gray-50">
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
-        <BrandSection isBackendAvailable={isBackendAvailable} />
-        <ModeSelectionSection modes={MODES} isBackendAvailable={isBackendAvailable} />
+    <>
+      <div className={`min-h-screen flex flex-col justify-center items-center p-4 bg-gray-50 ${(showWaterDialog || showStorageDialog) ? "blur-sm" : ""}`}>
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+          <BrandSection isBackendAvailable={isBackendAvailable} />
+          <div className="flex flex-col space-y-6">
+            <h2 className="text-3xl uppercase font-bold text-center text-gray-800">Select mode</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                {!isBuyWaterDisabled ? (
+                  <Link to={MODES[0].path}>
+                    <ModeCard mode={MODES[0]} isEnabled={true} />
+                  </Link>
+                ) : (
+                  <ModeCard mode={MODES[0]} isEnabled={false} />
+                )}
+                {waterCritical && (
+                  <p className="text-red-600 text-sm mt-1 text-center">
+                    Water volume is critically low
+                  </p>
+                )}
+              </div>
+              <div>
+                {!isRecycleDisabled ? (
+                  <Link to={MODES[1].path}>
+                    <ModeCard mode={MODES[1]} isEnabled={true} />
+                  </Link>
+                ) : (
+                  <ModeCard mode={MODES[1]} isEnabled={false} />
+                )}
+                {storageFull && (
+                  <p className="text-red-600 text-sm mt-1 text-center">
+                    PET storage is full
+                  </p>
+                )}
+              </div>
+            </div>
+            {!isBackendAvailable && (
+              <p className="text-center text-red-600 font-medium">
+                Please ensure the machine is connected and try again.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <WarningDialog
+        title="Critical Water Volume"
+        message="The water volume is critically low. The 'Buy Water' option is temporarily unavailable."
+        onConfirm={handleWaterDialogConfirm}
+        isOpen={showWaterDialog}
+      />
+
+      <WarningDialog
+        title="PET Storage Full"
+        message="The PET storage is full. Please empty the storage before recycling more bottles."
+        onConfirm={handleStorageDialogConfirm}
+        isOpen={showStorageDialog}
+      />
+    </>
   );
 }

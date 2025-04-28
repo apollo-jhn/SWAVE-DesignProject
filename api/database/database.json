@@ -13,7 +13,7 @@
             "name": "Jane Smith",
             "email": "jane.smith@example.com",
             "password": "another_password",
-            "points": 5000.0,
+            "points": 6000.0,
             "code": "5678"
         }
     ]

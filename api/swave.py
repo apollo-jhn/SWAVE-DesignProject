@@ -7,10 +7,16 @@ class SWAVE:
         # Buy Water
         self.selected_volume: int = 0
         self.selected_price: int = 0
-        self.dispensing_interval: int = 60000
+        self.dispensing_interval: int = 5000
+
+        # State
+        self.isStorageFull: bool = False
+        self.isWaterOnCritical: bool = False
+        self.enableBottleDetection: bool = True
+        self.enableDispenseWater: bool = True
 
         # Coinslot
-        self.inserted_amount: int = 5
+        self.inserted_amount: int = 100
 
         # Bottle temporary values
         self.bottleInserted: int = 5
