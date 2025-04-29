@@ -1,7 +1,66 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export function Membership_Homepage() {
+    const [credentials, setCredentials] = useState({
+        account_credentials: "",
+        password: ""
+    });
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        const { id, value } = e.target;
+        setCredentials(prev => ({
+            ...prev,
+            [id]: value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/membership/signin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: credentials.account_credentials,
+                    password: credentials.password
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
+
+            if (data.access === "true") {
+                // If the backend returns a redirect URL
+                if (data.redirectUrl) {
+                    // window.location.href = data.redirectUrl; // Full page reload
+                    // OR for client-side routing:
+                    navigate(data.redirectUrl);
+                } else {
+                    // Navigate to a default route if no URL provided
+                    navigate('/membership/homepage');
+                }
+            } else {
+                setError(data.message || 'Access denied');
+            }
+        } catch (err) {
+            setError(err.message || 'An error occurred during login');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex flex-col bg-gray-100">
             {/* Main Content */}
@@ -18,7 +77,13 @@ export function Membership_Homepage() {
 
                 {/* Login Form */}
                 <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-                    <form className="space-y-6">
+                    {error && (
+                        <div className="mb-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
+                            {error}
+                        </div>
+                    )}
+                    
+                    <form className="space-y-6" onSubmit={handleSubmit}>
                         {/* Email/Username Field */}
                         <div>
                             <label
@@ -33,6 +98,8 @@ export function Membership_Homepage() {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="delacruz.juan@dfcamclp.edu.ph"
                                 required
+                                value={credentials.account_credentials}
+                                onChange={handleChange}
                             />
                         </div>
 
@@ -50,6 +117,8 @@ export function Membership_Homepage() {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="••••••••"
                                 required
+                                value={credentials.password}
+                                onChange={handleChange}
                             />
                         </div>
 
@@ -71,7 +140,7 @@ export function Membership_Homepage() {
                             </div>
                             <div className="text-sm">
                                 <Link
-                                    to="/forgot-password"
+                                    to="/membership/forgot-password"
                                     className="font-medium text-blue-600 hover:text-blue-500"
                                 >
                                     Forgot password?
@@ -83,8 +152,17 @@ export function Membership_Homepage() {
                         <button
                             type="submit"
                             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            disabled={isLoading}
                         >
-                            Sign in
+                            {isLoading ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Signing in...
+                                </>
+                            ) : "Sign in"}
                         </button>
                     </form>
 
@@ -94,7 +172,7 @@ export function Membership_Homepage() {
                             Don't have an account?{" "}
                         </span>
                         <Link
-                            to="/register"
+                            to="/membership/register"
                             className="font-medium text-blue-600 hover:text-blue-500"
                         >
                             Sign up
@@ -107,8 +185,8 @@ export function Membership_Homepage() {
             <footer className="bg-red-800 py-4">
                 <div className="container mx-auto px-4 text-center text-white">
                     <p>
-                        © {new Date().getFullYear()} SWAVE Student Portal. All
-                        rights reserved.
+                        © {new Date().getFullYear()} SWAVE Vending Machine
+                        Prototype. All rights reserved.
                     </p>
                 </div>
             </footer>

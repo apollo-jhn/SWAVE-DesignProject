@@ -13,8 +13,24 @@
             "name": "Jane Smith",
             "email": "jane.smith@example.com",
             "password": "another_password",
-            "points": 6000.0,
+            "points": 2000.0,
             "code": "5678"
+        },
+        {
+            "student_number": "567890",
+            "name": "Ponteras, John Apollo S.",
+            "email": "japollo.ponteras@gmail.com",
+            "password": "123456789",
+            "points": 2.5,
+            "code": "1847"
+        },
+        {
+            "student_number": "567893",
+            "name": "Ponteras, John Apollo S.",
+            "email": "japollo.ponteras@gmail.com",
+            "password": "wqG8iQy4VqMw70",
+            "points": 0.0,
+            "code": "7230"
         }
     ]
 }

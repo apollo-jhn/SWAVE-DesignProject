@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export function Membership_Register() {
@@ -15,69 +15,72 @@ export function Membership_Register() {
     const [registrationSuccess, setRegistrationSuccess] = useState(false);
     const [registrationCode, setRegistrationCode] = useState("");
 
+    // Load registration success from sessionStorage (in case of re-render)
+    useEffect(() => {
+        const success = sessionStorage.getItem("registrationSuccess");
+        const code = sessionStorage.getItem("registrationCode");
+        if (success === "true" && code) {
+            setRegistrationSuccess(true);
+            setRegistrationCode(code);
+        }
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
-        // For student number, only allow numbers
+
         if (name === "student_number") {
             if (value === "" || /^[0-9]*$/.test(value)) {
-                setFormData(prev => ({
-                    ...prev,
-                    [name]: value
-                }));
+                setFormData(prev => ({ ...prev, [name]: value }));
             }
         } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
+            setFormData(prev => ({ ...prev, [name]: value }));
         }
     };
 
     const validateForm = () => {
         const newErrors = {};
-        
+
         if (!formData.student_number.trim()) {
             newErrors.student_number = "Student number is required";
         } else if (formData.student_number.length < 4) {
             newErrors.student_number = "Student number must be at least 4 digits";
         }
-        
+
         if (!formData.name.trim()) {
             newErrors.name = "Name is required";
         }
-        
+
         if (!formData.email.trim()) {
             newErrors.email = "Email is required";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = "Please enter a valid email";
         }
-        
+
         if (!formData.password) {
             newErrors.password = "Password is required";
         } else if (formData.password.length < 6) {
             newErrors.password = "Password must be at least 6 characters";
         }
-        
+
         if (!formData.confirmPassword) {
             newErrors.confirmPassword = "Please confirm your password";
         } else if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = "Passwords do not match";
         }
-        
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) return;
-        
+
         setIsSubmitting(true);
-        
+
         try {
-            const response = await fetch("http://192.168.1.13:5000/account/add", {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/membership/add`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -89,13 +92,17 @@ export function Membership_Register() {
                     password: formData.password
                 }),
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok) {
                 if (data.message === "student number already exist!") {
                     setErrors({ student_number: "This student number is already registered" });
                 } else {
+                    // Save to sessionStorage
+                    sessionStorage.setItem("registrationSuccess", "true");
+                    sessionStorage.setItem("registrationCode", data.code);
+
                     setRegistrationSuccess(true);
                     setRegistrationCode(data.code);
                 }
@@ -110,6 +117,13 @@ export function Membership_Register() {
         }
     };
 
+    const handleGoHome = () => {
+        // Clear sessionStorage and redirect
+        sessionStorage.removeItem("registrationSuccess");
+        sessionStorage.removeItem("registrationCode");
+        navigate("/membership/homepage");
+    };
+
     if (registrationSuccess) {
         return (
             <div className="min-h-screen flex flex-col bg-gray-100">
@@ -119,7 +133,7 @@ export function Membership_Register() {
                             <h2 className="text-2xl font-bold text-green-600 mb-2">Registration Successful!</h2>
                             <p className="text-gray-700">Registered Thank you!</p>
                         </div>
-                        
+
                         <div className="bg-blue-50 p-4 rounded-md mb-6">
                             <p className="text-sm text-gray-600 mb-1">Your unique code:</p>
                             <p className="text-2xl font-mono font-bold text-blue-700">{registrationCode}</p>
@@ -127,9 +141,9 @@ export function Membership_Register() {
                                 Please keep this code safe. You'll need it for account verification.
                             </p>
                         </div>
-                        
+
                         <button
-                            onClick={() => navigate("/")}
+                            onClick={handleGoHome}
                             className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
                         >
                             Go to Homepage
@@ -142,23 +156,16 @@ export function Membership_Register() {
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-100">
-            {/* Main Content */}
             <div className="flex-grow flex flex-col items-center justify-center p-4">
-                {/* Title Container */}
                 <div className="text-center mb-10">
                     <h1 className="text-5xl font-bold text-blue-600 mb-2">SWAVE</h1>
                     <p className="text-gray-600">Create your student account</p>
                 </div>
-                
-                {/* Registration Form */}
+
                 <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Student Number Field */}
                         <div>
-                            <label
-                                htmlFor="student_number"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
+                            <label htmlFor="student_number" className="block text-sm font-medium text-gray-700 mb-1">
                                 Student Number *
                             </label>
                             <input
@@ -175,13 +182,9 @@ export function Membership_Register() {
                                 <p className="mt-1 text-sm text-red-600">{errors.student_number}</p>
                             )}
                         </div>
-                        
-                        {/* Name Field */}
+
                         <div>
-                            <label
-                                htmlFor="name"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                                 Full Name *
                             </label>
                             <input
@@ -198,13 +201,9 @@ export function Membership_Register() {
                                 <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                             )}
                         </div>
-                        
-                        {/* Email Field */}
+
                         <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                                 Email Address *
                             </label>
                             <input
@@ -221,13 +220,9 @@ export function Membership_Register() {
                                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                             )}
                         </div>
-                        
-                        {/* Password Field */}
+
                         <div>
-                            <label
-                                htmlFor="password"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                                 Password *
                             </label>
                             <input
@@ -246,12 +241,8 @@ export function Membership_Register() {
                             <p className="mt-1 text-xs text-gray-500">Password must be at least 6 characters</p>
                         </div>
 
-                        {/* Confirm Password Field */}
                         <div>
-                            <label
-                                htmlFor="confirmPassword"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
+                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                                 Confirm Password *
                             </label>
                             <input
@@ -268,8 +259,7 @@ export function Membership_Register() {
                                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
                             )}
                         </div>
-                        
-                        {/* Submit Button */}
+
                         <button
                             type="submit"
                             disabled={isSubmitting}
@@ -278,8 +268,7 @@ export function Membership_Register() {
                             {isSubmitting ? "Registering..." : "Register"}
                         </button>
                     </form>
-                    
-                    {/* Login Link */}
+
                     <div className="mt-6 text-center text-sm">
                         <span className="text-gray-600">Already have an account? </span>
                         <Link to="/" className="font-medium text-blue-600 hover:text-blue-500">
@@ -288,8 +277,7 @@ export function Membership_Register() {
                     </div>
                 </div>
             </div>
-            
-            {/* Footer */}
+
             <footer className="bg-red-800 py-4">
                 <div className="container mx-auto px-4 text-center text-white">
                     <p>© {new Date().getFullYear()} SWAVE Student Portal. All rights reserved.</p>

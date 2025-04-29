@@ -9,6 +9,8 @@ import { MachineUI_Recycle_Bottles } from "./machineui/machineui_recycle_bottles
 import { MachineUI_Recycle_Redeem } from "./machineui/machineui_recycle_redeem";
 import { Membership_Homepage } from "./membership/membership_homepage";
 import { Membership_Register } from "./membership/membership_register";
+import { Membership_UnderConstruction } from "./membership/membership_undercontruction";
+import { Membership_Dashboard} from "./membership/membership_dashboard";
 
 function App() {
     return (
@@ -25,6 +27,8 @@ function App() {
                 {/* Membership */}
                 <Route path="/membership/homepage" element={<Membership_Homepage />} />
                 <Route path="/membership/register" element={<Membership_Register />} />
+                <Route path="/membership/dashboard/:code" element={<Membership_Dashboard />} />
+                <Route path="/membership/forgot-password" element={<Membership_UnderConstruction />} />
             </Routes>
         </Router>
     );

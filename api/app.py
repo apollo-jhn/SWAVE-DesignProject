@@ -5,25 +5,28 @@ from .swave import SWAVE
 from dotenv import load_dotenv
 
 # Flask
-app = Flask(__name__, static_folder=None)  # We'll handle static files manually
-swave = SWAVE() 
+app = Flask(__name__, static_folder=None)
+swave = SWAVE()
 
 # Configure paths
-REACT_BUILD_DIR = os.path.join(os.path.dirname(__file__), '..', 'dist')
+REACT_BUILD_DIR = os.path.join(os.path.dirname(__file__), "..", "dist")
+
 
 # Serve React's static files
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
 def serve_react(path):
     if path != "" and os.path.exists(os.path.join(REACT_BUILD_DIR, path)):
         return send_from_directory(REACT_BUILD_DIR, path)
     else:
-        return send_from_directory(REACT_BUILD_DIR, 'index.html')
+        return send_from_directory(REACT_BUILD_DIR, "index.html")
+
 
 # Your existing API routes
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"status": "success"}), 200
+
 
 @app.route("/data/put", methods=["POST"])
 def putData():
@@ -40,6 +43,7 @@ def putData():
         return jsonify({"status": "success"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/data/get", methods=["POST"])
 def getData():
@@ -69,12 +73,12 @@ def getData():
         if "is_storage_full" in requested_fields:
             _return_data["is_storage_full"] = swave.isStorageFull
         if "is_water_critical" in requested_fields:
-            _return_data["is_water_critical"] = swave.isWaterOnCritical    
-        
+            _return_data["is_water_critical"] = swave.isWaterOnCritical
 
         return jsonify(_return_data), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route("/function/call", methods=["POST"])
 def callFunction():
@@ -93,7 +97,35 @@ def callFunction():
             print(_return_data)
     return jsonify(_return_data), 200
 
+
+@app.route("/membership/add", methods=["POST"])
+def registerAccount():
+    if request.method == "POST":
+        _data = request.get_json()
+        _message = swave.registerAccount(
+            _data["student_number"],
+            _data["name"],
+            _data["email"],
+            _data["password"]
+        )
+        return jsonify(_message)
+    
+@app.route("/membership/signin", methods=["POST"])
+def signInAccount():
+    if request.method == "POST":
+        _credential = request.get_json()
+        _username = _credential["username"]
+        _password = _credential["password"]
+        return swave.signIn(_username, _password)
+        
+@app.route("/membership/getdata", methods=["POST"])
+def membershipGetData():
+    if request.method == "POST":
+        _request = request.get_json()
+        if "code" in _request:
+            return swave.getData(_request["code"]), 200
+
 def main():
     CORS(app)
     load_dotenv()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host="0.0.0.0")
