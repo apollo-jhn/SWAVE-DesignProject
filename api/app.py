@@ -21,11 +21,60 @@ def serve_react(path):
     else:
         return send_from_directory(REACT_BUILD_DIR, "index.html")
 
+# Water Pump Relay
+@app.route("/waterpump/data", methods=["GET"])
+def getWaterPumpData():
+    if request.method == "GET":
+        _return = {
+            "interval": swave.dispensing_interval,
+            "dispense": swave.enableDispenseWater,
+            "stop": swave.enableDispenseWater
+        }
+        return jsonify(_return), 200
+
+@app.route("/stop/dispense", methods=["GET"])
+def stopDispense():
+    if request.method == "GET":
+        swave.stopDispense = True
+        swave.enableDispenseWater = False
+        return jsonify({"message": "OK"}), 200
+
+@app.route("/disable/dispense", methods=["GET"])
+def disableDispense():
+    if request.method == "GET":
+        swave.stopDispense = False
+        swave.enableDispenseWater = False
+        return jsonify({"message": "OK"}), 200
 
 # Your existing API routes
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"status": "success"}), 200
+
+@app.route("/coinslot/increment", methods=["GET"])
+def incrementInsertedAmount():
+    swave.inserted_amount += 1
+    return jsonify({"message": "OK"}), 200
+
+@app.route("/bottle/manager", methods=["POST"])
+def sensors_IRstates():
+    if request.method == "POST":
+        _data = request.get_json()
+        print(_data)
+        swave.pointsAcquired += float(_data["reward_point"])
+        swave.bottleInserted += 1
+        return jsonify({"message": "OK"}), 200
+        
+@app.route("/redeem/item", methods=["POST"])
+def redeemItem():
+    if request.method == "POST":
+        _data = request.get_json()
+        _code = _data["code"]
+        _itemID = _data["itemId"]
+        _pointsCost = _data["pointsCost"]
+        swave.redeemItem(_code, _itemID, _pointsCost)
+        pass
+    return jsonify({"message": "OK"}), 200
 
 
 @app.route("/data/put", methods=["POST"])
@@ -36,7 +85,10 @@ def putData():
             return jsonify({"status": "error", "message": "No data provided"}), 400
 
         if "volume" in _data:
-            swave.selected_volume = int(_data["volume"].replace("ml", ""))
+            _volume = int(_data["volume"].replace("ml", ""))
+            swave.dispensing_interval = 1000 * ((_volume/swave.MAX_LITER) * swave.SECONDS_PER_LITER)
+            swave.noOfLitersServed += _volume
+            swave.selected_volume = _volume
         if "price" in _data:
             swave.selected_price = int(_data["price"].replace("₱", ""))
 

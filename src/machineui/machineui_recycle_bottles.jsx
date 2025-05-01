@@ -97,7 +97,7 @@ export function MachineUI_Recycle_Bottles() {
                         Points Received
                     </h2>
                     <p className="text-6xl font-bold text-white">
-                        {pointsReceived}
+                        {parseFloat(pointsReceived).toFixed(2)}
                     </p>
                 </div>
             </div>

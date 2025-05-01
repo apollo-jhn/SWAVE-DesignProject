@@ -5,32 +5,65 @@ import os
 
 class SWAVE:
     def __init__(self):
-        # PINS
-        self.IRSENSOR_1: int = 4
-        self.IRSENSOR_2: int = 17
-        self.IRSENSOR_3: int = 18
-        self.ULTRASONIC_1_TRIG: int = 27
-        self.ULTRASONIC_1_ECHO: int = 22
-        self.ULTRASONIC_2_TRIG: int = 23
-        self.ULTRASONIC_2_ECHO: int = 24
+        # CONSTANTS
+        self.SECONDS_PER_LITER: float = 30.0
+        self.MAX_LITER: int = 1000
+        self.WATER_LIMIT_IN_LITERS: int = 20
+
+        # Temporary Values
+        self.noOfLitersServed: float = 0.0
+        self.totalIncome: float = 0.0
 
         # Buy Water
         self.selected_volume: int = 0
         self.selected_price: int = 0
-        self.dispensing_interval: int = 0
+        self.dispensing_interval: float = 0
+
+        # Reward Items
+        self.rewardItemID: int = 0
+        self.rewardItemPointsCost: int = 0
+        self.stopDispense: bool = False
 
         # State
         self.isStorageFull: bool = False
         self.isWaterOnCritical: bool = False
         self.enableBottleDetection: bool = True
-        self.enableDispenseWater: bool = True
+        self.enableDispenseWater: bool = False
 
         # Coinslot
-        self.inserted_amount: int = 100
+        self.inserted_amount: int = 10000
 
         # Bottle temporary values
-        self.bottleInserted: int = 5
-        self.pointsAcquired: float = 1000.0
+        self.bottleInserted: int = 0
+        self.pointsAcquired: float = 0.0
+
+    def redeemItem(self, code: str, itemId: int, pointCost: float):
+        _db = self.readDatabase()
+
+        # First find if the code exists
+        account_found = None
+        for account in _db["accounts"]:
+            if account["code"] == code:
+                account_found = account
+                break
+
+        if account_found:
+            # Minus the points
+            account_found["points"] -= pointCost
+
+            # Write back to the database
+            self.writeDatabase(_db)
+
+            # Clear points
+            self.clearBottleDataValues()
+            return {
+                "message": "Point Added Successfully. Thank you!",
+                "status": "success",
+            }
+        else:
+            return {"message": "User code was not found.", "status": "failed"}
+
+        
 
     def incrementInsertedBottleValue(self, value=1):
         self.bottleInserted += value
@@ -159,7 +192,7 @@ class SWAVE:
                     "name": student["name"],
                     "email": student["email"],
                 }
-        
+
         # Only print error if no student found after checking all accounts
         print(f"ERROR: GETDATA ERROR - No student found with code: {code}")
         return None  # Explicitly return None to indicate no match found
@@ -174,9 +207,11 @@ class SWAVE:
 
     # TODO: Dispense Water Logic
     def dispenseWater(self):
+        self.inserted_amount -= self.selected_price
+        self.enableDispenseWater = True
+        self.stopDispense = False
         # Get the required data volume
         # Given from the time per liter constant open the relay according to the time.
-        pass
 
     def checkForStorage(self):
         pass

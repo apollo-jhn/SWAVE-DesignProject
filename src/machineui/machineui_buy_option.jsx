@@ -8,10 +8,10 @@ export function MachineUI_Buy_Option() {
     const navigate = useNavigate();
 
     const volumeOptions = [
-        { size: "350ml", price: "₱35" },
-        { size: "500ml", price: "₱50" },
-        { size: "750ml", price: "₱75" },
-        { size: "1000ml", price: "₱99" },
+        { size: "250ml", price: "₱2" },
+        { size: "500ml", price: "₱4" },
+        { size: "750ml", price: "₱6" },
+        { size: "1000ml", price: "₱11" },
     ];
 
     const handleOptionClick = (index) => {

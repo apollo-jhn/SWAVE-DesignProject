@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { postRequest } from "../tools/api_request";
+import { postRequest, getRequest } from "../tools/api_request"; // Make sure getRequest is imported
 
 export function MachineUI_Buy_Dispense() {
     const navigate = useNavigate();
@@ -8,11 +8,15 @@ export function MachineUI_Buy_Dispense() {
     const [isFilling, setIsFilling] = useState(true);
     const [showSuccess, setShowSuccess] = useState(false);
     const [timeInterval, setTimeInterval] = useState(2000); // Default fallback in ms
+    const [remainingTime, setRemainingTime] = useState(0);
 
     // Constants for animation control
-    const ANIMATION_UPDATE_INTERVAL = 200; // ms between progress updates
-    const SUCCESS_DISPLAY_DURATION = 2000; // ms before auto-navigate
-    const PROGRESS_INCREMENT = 100 / (timeInterval / ANIMATION_UPDATE_INTERVAL);
+    const ANIMATION_UPDATE_INTERVAL = 20; // ms between progress updates (reduced for smoother animation)
+    const SUCCESS_DISPLAY_DURATION = 0; // ms before auto-navigate
+
+    // Calculate derived values
+    const totalSteps = Math.ceil(timeInterval / ANIMATION_UPDATE_INTERVAL);
+    const PROGRESS_INCREMENT = 100 / totalSteps;
 
     // Fetch dispense interval from backend
     useEffect(() => {
@@ -23,7 +27,10 @@ export function MachineUI_Buy_Dispense() {
                 });
                 
                 if (response.status === "good") {
-                    setTimeInterval(response.dispense_interval);
+                    // Ensure we have a number (handle float values)
+                    const interval = parseFloat(response.dispense_interval) || 2000;
+                    setTimeInterval(interval);
+                    setRemainingTime(interval / 1000); // Convert to seconds for display
                 }
             } catch (error) {
                 console.error("Failed to fetch dispense interval:", error);
@@ -33,7 +40,7 @@ export function MachineUI_Buy_Dispense() {
         fetchDispenseInterval();
     }, []);
 
-    // Handle progress animation
+    // Handle progress animation and time remaining
     useEffect(() => {
         let intervalId;
 
@@ -41,11 +48,15 @@ export function MachineUI_Buy_Dispense() {
             intervalId = setInterval(() => {
                 setProgress((prevProgress) => {
                     const newProgress = prevProgress + PROGRESS_INCREMENT;
+                    const newRemaining = remainingTime - (ANIMATION_UPDATE_INTERVAL / 1000);
+                    
+                    setRemainingTime(Math.max(0, newRemaining));
                     
                     if (newProgress >= 100) {
                         clearInterval(intervalId);
                         setIsFilling(false);
                         setShowSuccess(true);
+                        setRemainingTime(0);
                         return 100;
                     }
                     
@@ -62,20 +73,33 @@ export function MachineUI_Buy_Dispense() {
         if (!showSuccess) return;
 
         const successTimer = setTimeout(
-            () => navigate("/machineui/thankyou"),
+            async () => {
+                // Send disable dispense command before navigating
+                await getRequest("/disable/dispense");
+                navigate("/machineui/thankyou");
+            },
             SUCCESS_DISPLAY_DURATION
         );
 
         return () => clearTimeout(successTimer);
     }, [showSuccess, navigate]);
 
-    const handleStop = () => {
+    const handleStop = async () => {
+        // Send disable dispense command when stopping manually
+        await getRequest("/disable/dispense");
         setIsFilling(false);
         setShowSuccess(true);
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
+        // Send disable dispense command before navigating
+        await getRequest("/disable/dispense");
         navigate("/machineui/thankyou");
+    };
+
+    // Format time display (seconds with 1 decimal place)
+    const formatTime = (seconds) => {
+        return seconds.toFixed(1);
     };
 
     return (
@@ -88,6 +112,13 @@ export function MachineUI_Buy_Dispense() {
             </header>
 
             <div className="flex-1 flex flex-col items-center justify-center p-1">
+                {/* Time remaining display */}
+                {isFilling && (
+                    <div className="mb-2 text-lg font-semibold text-blue-800">
+                        Time remaining: {formatTime(remainingTime)}s
+                    </div>
+                )}
+
                 {/* Water Bottle Animation */}
                 <div className="relative w-24 h-40 border-3 border-blue-300 rounded-b-lg rounded-t-full overflow-hidden bg-blue-50">
                     <div
@@ -103,7 +134,7 @@ export function MachineUI_Buy_Dispense() {
                 {/* Progress Bar */}
                 <div className="w-4/5 mt-2 bg-gray-200 rounded-full h-2">
                     <div
-                        className="bg-blue-600 h-2 rounded-full"
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
@@ -118,7 +149,7 @@ export function MachineUI_Buy_Dispense() {
                 {isFilling && (
                     <button
                         onClick={handleStop}
-                        className="w-full py-2 rounded-lg font-bold text-lg bg-red-600 text-white"
+                        className="w-full py-2 rounded-lg font-bold text-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
                     >
                         STOP
                     </button>
@@ -127,7 +158,7 @@ export function MachineUI_Buy_Dispense() {
                 {showSuccess && (
                     <button
                         onClick={handleContinue}
-                        className="w-full py-2 rounded-lg font-bold text-lg bg-green-600 text-white"
+                        className="w-full py-2 rounded-lg font-bold text-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
                     >
                         CONTINUE
                     </button>
