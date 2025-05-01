@@ -12,6 +12,10 @@ IR_SENSOR_1: int = 4
 IR_SENSOR_2: int = 11
 IR_SENSOR_3: int = 12
 WATER_PUMP_RELAY: int = 13
+ULTRASONIC_1_TRIG: int = 27
+ULTRASONIC_1_ECHO: int = 22
+
+ULTRASONIC_LIMIT: float = 10.00
 
 
 def setup():
@@ -31,6 +35,11 @@ def setup():
     # Water Pump Relay
     GPIO.setup(WATER_PUMP_RELAY, GPIO.OUT)
     GPIO.output(WATER_PUMP_RELAY, GPIO.HIGH)
+
+    # Ultrasonic 1
+    GPIO.setup(ULTRASONIC_1_ECHO, GPIO.IN)
+    GPIO.setup(ULTRASONIC_1_TRIG, GPIO.OUT)
+    GPIO.output(ULTRASONIC_1_TRIG, GPIO.LOW)
 
     # Coin slot callback
     GPIO.add_event_detect(
@@ -70,7 +79,7 @@ def checkBottle(channel):
     )
 
 
-def loop():
+def waterPump():
     _successcode, _dispenseData = getRequest(
         os.getenv("API_BASE_URL") + "/waterpump/data"
     )
@@ -84,6 +93,38 @@ def loop():
         GPIO.output(WATER_PUMP_RELAY, GPIO.LOW)
     else:
         GPIO.output(WATER_PUMP_RELAY, GPIO.HIGH)
+
+
+def checkPETStorage():
+    # Send pulse
+    GPIO.output(ULTRASONIC_1_TRIG, GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(ULTRASONIC_1_TRIG, GPIO.LOW)
+
+    # Measure echo duration
+    while GPIO.input(ULTRASONIC_1_ECHO) == 0:
+        pulse_start = time.time()
+
+    while GPIO.input(ULTRASONIC_1_ECHO) == 1:
+        pulse_end = time.time()
+
+    pulse_duration = pulse_end - pulse_start
+
+    # Calculate distance (cm)
+    distance = pulse_duration * 17150
+    distance = round(distance, 2)
+
+    if distance < ULTRASONIC_LIMIT:
+        postRequest(os.getenv("API_BASE_URL") + "/storage/check", {"warning": True})
+    else:
+        postRequest(os.getenv("API_BASE_URL") + "/storage/check", {"warning": False})
+
+
+def loop():
+    # Storage Check
+    checkPETStorage()
+    # Water Pump
+    waterPump()
 
 
 if __name__ == "__main__":

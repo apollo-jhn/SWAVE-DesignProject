@@ -122,53 +122,92 @@ const WarningDialog = ({ title, message, onConfirm, isOpen }) => {
   );
 };
 
+const ReloadButton = ({ onClick, isLoading }) => (
+  <button
+    onClick={onClick}
+    disabled={isLoading}
+    className={`fixed top-4 left-4 p-2 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      isLoading ? "opacity-70 cursor-not-allowed" : ""
+    }`}
+    aria-label="Reload machine status"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className={`h-6 w-6 ${isLoading ? "animate-spin" : ""}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
+    </svg>
+  </button>
+);
+
 export function MachineUI_Homepage() {
   const [connectionStatus, setConnectionStatus] = useState(ConnectionStatus.LOADING);
   const [waterCritical, setWaterCritical] = useState(false);
   const [storageFull, setStorageFull] = useState(false);
   const [showWaterDialog, setShowWaterDialog] = useState(false);
   const [showStorageDialog, setShowStorageDialog] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
+
+  const checkConnection = async () => {
+    try {
+      const response = await getRequest("/ping");
+      const isAvailable = response.status === "success";
+      setConnectionStatus(isAvailable ? ConnectionStatus.AVAILABLE : ConnectionStatus.UNAVAILABLE);
+      
+      if (isAvailable) {
+        await checkMachineStatus();
+      }
+    } catch (error) {
+      console.error("Connection check failed:", error);
+      setConnectionStatus(ConnectionStatus.UNAVAILABLE);
+    } finally {
+      setIsReloading(false);
+    }
+  };
+
+  const checkMachineStatus = async () => {
+    try {
+      // Check water status
+      const waterResponse = await postRequest("/data/get", {
+        request: ["is_water_critical"]
+      });
+      if (waterResponse.is_water_critical) {
+        setWaterCritical(true);
+        setShowWaterDialog(true);
+      } else {
+        setWaterCritical(false);
+      }
+
+      // Check storage status
+      const storageResponse = await postRequest("/data/get", {
+        request: ["is_storage_full"]
+      });
+      if (storageResponse.is_storage_full) {
+        setStorageFull(true);
+        setShowStorageDialog(true);
+      } else {
+        setStorageFull(false);
+      }
+    } catch (error) {
+      console.error("Failed to check machine status:", error);
+    }
+  };
+
+  const handleReload = () => {
+    setIsReloading(true);
+    setConnectionStatus(ConnectionStatus.LOADING);
+    checkConnection();
+  };
 
   useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const response = await getRequest("/ping");
-        const isAvailable = response.status === "success";
-        setConnectionStatus(isAvailable ? ConnectionStatus.AVAILABLE : ConnectionStatus.UNAVAILABLE);
-        
-        if (isAvailable) {
-          checkMachineStatus();
-        }
-      } catch (error) {
-        console.error("Connection check failed:", error);
-        setConnectionStatus(ConnectionStatus.UNAVAILABLE);
-      }
-    };
-
-    const checkMachineStatus = async () => {
-      try {
-        // Check water status
-        const waterResponse = await postRequest("/data/get", {
-          request: ["is_water_critical"]
-        });
-        if (waterResponse.is_water_critical) {
-          setWaterCritical(true);
-          setShowWaterDialog(true);
-        }
-
-        // Check storage status
-        const storageResponse = await postRequest("/data/get", {
-          request: ["is_storage_full"]
-        });
-        if (storageResponse.is_storage_full) {
-          setStorageFull(true);
-          setShowStorageDialog(true);
-        }
-      } catch (error) {
-        console.error("Failed to check machine status:", error);
-      }
-    };
-
     checkConnection();
   }, []);
 
@@ -181,7 +220,12 @@ export function MachineUI_Homepage() {
   };
 
   if (connectionStatus === ConnectionStatus.LOADING) {
-    return <LoadingScreen />;
+    return (
+      <>
+        <ReloadButton onClick={handleReload} isLoading={isReloading} />
+        <LoadingScreen />
+      </>
+    );
   }
 
   const isBackendAvailable = connectionStatus === ConnectionStatus.AVAILABLE;
@@ -190,6 +234,8 @@ export function MachineUI_Homepage() {
 
   return (
     <>
+      <ReloadButton onClick={handleReload} isLoading={isReloading} />
+      
       <div className={`min-h-screen flex flex-col justify-center items-center p-4 bg-gray-50 ${(showWaterDialog || showStorageDialog) ? "blur-sm" : ""}`}>
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
           <BrandSection isBackendAvailable={isBackendAvailable} />

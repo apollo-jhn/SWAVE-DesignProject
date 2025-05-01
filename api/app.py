@@ -21,6 +21,18 @@ def serve_react(path):
     else:
         return send_from_directory(REACT_BUILD_DIR, "index.html")
 
+@app.route("/storage/check", methods=["POST"])
+def plasticBottleCheck():
+    if request.method == "POST":
+        _data = request.get_json()
+        _ = _data["warning"]
+        if _ == True:
+            swave.isStorageFull = True
+        else:
+            swave.isStorageFull = False
+        return jsonify({"message": "OK"}), 200
+            
+
 # Water Pump Relay
 @app.route("/waterpump/data", methods=["GET"])
 def getWaterPumpData():
