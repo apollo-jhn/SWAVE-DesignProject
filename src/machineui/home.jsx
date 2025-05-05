@@ -37,7 +37,7 @@ export function MachineUI_Home() {
           >
             <img
               className="h-full object-cover"
-              src="images/a_glass_of_water.jpeg"
+              src="/images/a_glass_of_water.jpeg"
               alt="a-glass-of-water-image"
             />
             <p className="col-span-3 text-3xl text-white font-bold text-center">
@@ -51,7 +51,7 @@ export function MachineUI_Home() {
           >
             <img
               className="h-full object-cover"
-              src="images/plastic_bottles.jpeg"
+              src="/images/plastic_bottles.jpeg"
               alt="plastic-bottles"
             />
             <p className="col-span-3 text-3xl text-white font-bold text-center">
