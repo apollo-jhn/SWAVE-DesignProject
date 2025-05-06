@@ -68,7 +68,9 @@ export function MachineUI_Payment() {
         </h1>
         <button
           onClick={() => navigate(-1)}
-          className="invisible flex flex-row items-center p-2 rounded-xl"
+          className={`${
+            coinsInserted === 0 ? "visible" : "invisible"
+          } flex flex-row items-center p-2 rounded-xl`}
         >
           <svg
             width="32"

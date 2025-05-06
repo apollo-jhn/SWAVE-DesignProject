@@ -1,8 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 export function MachineUI_ThankYou() {
+  const location = useLocation();
   const navigate = useNavigate();
+  const { message } = location.state || {};
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -27,9 +29,7 @@ export function MachineUI_ThankYou() {
         </h1>
 
         {/* Subtext */}
-        <p className="text-base sm:text-lg text-gray-700">
-          Your refreshing water is on its way!
-        </p>
+        <p className="text-base sm:text-lg text-gray-700">{message}</p>
         <p className="text-sm text-gray-500 mb-6">
           We appreciate you choosing SWAVE for your hydration needs.
         </p>
@@ -48,7 +48,7 @@ export function MachineUI_ThankYou() {
       </div>
 
       {/* Tailwind Custom Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes scale {
           0% {
             transform: scale(0.9);

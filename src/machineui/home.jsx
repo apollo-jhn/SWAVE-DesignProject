@@ -46,7 +46,7 @@ export function MachineUI_Home() {
           </button>
 
           <button
-            onClick={handle_navigate("machineui/recycle")}
+            onClick={handle_navigate("/machineui/recycle")}
             className="grid grid-cols-4 items-center bg-blue-800 rounded-2xl overflow-hidden shadow-md hover:bg-blue-700 transition-colors"
           >
             <img
