@@ -7,25 +7,45 @@ export function MachineUI_Bottle() {
   const POLLING_RATE_MS = 500;
   const [inserted_bottle_count, set_inserted_bottle_count] = useState(0);
   const [reward_points, set_reward_points] = useState(0.0);
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      const _fetchdata = async () => {
-        try {
-          const _response = await axios.get(
-            import.meta.env.VITE_API_BASE_URL + "/recycle/data"
-          );
-          // Get the data store
+    let isMounted = true;
+
+    const _fetchdata = async () => {
+      try {
+        const _response = await axios.get(
+          import.meta.env.VITE_API_BASE_URL + "/recycle/data"
+        );
+        if (isMounted) {
           set_inserted_bottle_count(_response.data.inserted_bottles);
           set_reward_points(_response.data.reward_points);
-        } catch (error) {
-          console.error("ERROR: Recyling Page - Fetching data:", error);
         }
-      };
-      _fetchdata();
-    }, POLLING_RATE_MS);
+      } catch (error) {
+        console.error("ERROR: Recycling Page - Fetching data:", error);
+      }
+    };
 
-    return () => clearInterval(timer);
+    const timer = setInterval(_fetchdata, POLLING_RATE_MS);
+
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
   }, []);
+
+  const donate_bottle = async () => {
+    const response = await axios.get(
+      import.meta.env.VITE_API_BASE_URL + "/recycle/donate"
+    );
+    if (response.status == 200) {
+      navigate("/machineui/thankyou", {
+        state: {
+          message:
+            "Thank you for your thoughtful donation of PET bottles, which aids our ongoing commitment to environmental responsibility.",
+        },
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4 pb-4 px-4 bg-white h-full">
@@ -63,6 +83,7 @@ export function MachineUI_Bottle() {
           <p className="font-semibold text-lg text-blue-800 ml-1">Back</p>
         </button>
       </div>
+
       {/* Bottle Counter, Reward Point Counter */}
       <div className="grow gap-4 grid grid-cols-2 grid-rows-1 text-white">
         {/* Bottle Counter */}
@@ -75,15 +96,19 @@ export function MachineUI_Bottle() {
         {/* Reward Point */}
         <div className="bg-gradient-to-br gap-2 from-blue-700 to-blue-900 rounded-3xl p-6 shadow-lg flex flex-col justify-center items-center">
           <h1 className="text-8xl font-extrabold animate-pulse">
-            {reward_points.toFixed(2)}
+            {typeof reward_points === "number"
+              ? reward_points.toFixed(2)
+              : "0.00"}
           </h1>
           <h2 className="text-2xl font-bold uppercase">Reward points</h2>
         </div>
       </div>
+
       {/* Buttons */}
       <div className="gap-4 grid grid-cols-1 grid-rows-2 font-bold text-white">
         {/* Donate Button */}
         <button
+          onClick={donate_bottle}
           className={`${
             inserted_bottle_count > 0 ? "bg-green-600" : "bg-gray-700"
           } text-2xl rounded-2xl shadow-lg transition-colors py-4`}

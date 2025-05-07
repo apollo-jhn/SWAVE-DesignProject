@@ -15,10 +15,10 @@ export function MachineUI_Payment() {
       const _fetchdata = async () => {
         try {
           const _request = await axios.get(
-            import.meta.env.VITE_API_BASE_URL + "/buywater/coin/value"
+            import.meta.env.VITE_API_BASE_URL + "/coinslot/inserted_amount"
           );
           // console.log(_request.data); // or do something with the data
-          setCoinsInserted(_request.data.inserted_coin);
+          setCoinsInserted(_request.data.inserted_amount);
         } catch (error) {
           console.error("Polling error:", error);
         }

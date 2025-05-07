@@ -7,7 +7,6 @@ export function MachineUI_Dispense() {
   const navigation = useNavigate();
   const location = useLocation();
   const { dispensing_interval } = location.state || {};
-
   const [isDispensing, setIsDispensing] = useState(true);
 
   const dispense_complete = async () => {
@@ -16,7 +15,7 @@ export function MachineUI_Dispense() {
 
     try {
       const response = await axios.get(
-        import.meta.env.VITE_API_BASE_URL + "/buywater/stop/dispensing"
+        import.meta.env.VITE_API_BASE_URL + "/stop/dispensing"
       );
 
       if (response.status === 200) {

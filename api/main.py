@@ -1,115 +1,104 @@
-from flask import jsonify, request, Flask
-from app.swave import SWAVE
+import signal
+import sys
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+from app.swave import SWAVE, SWAVE_GPIO
 
+# Flask
+app: Flask = Flask(__name__)
+CORS(app)
 
-flask: Flask = Flask(__name__)
-CORS(flask)
+# SWAVE class
 swave: SWAVE = SWAVE()
+swave_gpio: SWAVE_GPIO = SWAVE_GPIO()
+
+# Signal Handling for Cleanup
 
 
-@flask.route("/recycle/data", methods=["POST", "GET"])
-def recycle_get_data():
+def shutdown_handler(signum, frame) -> None:
+    print(f"\n[INFO] Received signal {signum}, cleaning up GPIO...")
+    swave_gpio.cleanup()
+    sys.exit(0)
+
+
+# Register signals (Ctrl+C and kill)
+signal.signal(signal.SIGINT, shutdown_handler)
+signal.signal(signal.SIGTERM, shutdown_handler)
+
+
+@app.route("/warnings", methods=["GET"])
+def get_warnings():
     try:
-        if request.method == "POST":
-            pass
-        if request.method == "GET":
-            return jsonify({"inserted_bottles": swave.get_inserted_bottles(), "reward_points": swave.get_reward_points()}), 200
+        print(swave.get_warning_fullstorage())
+        return jsonify({"is_low_water": swave.get_warning_low_on_water(), "is_storage_full": swave.get_warning_fullstorage()}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": str(e)}), 500
 
 
-@flask.route("/buywater/process_order", methods=["POST"])
-def buywater_postdata():
-    """
-        Handles the POST request to process a water purchase order.
-
-        Endpoint:
-            /buywater/process_order
-
-        Methods:
-            POST
-
-        Request Body (JSON):
-            - volume_value (optional, float): The volume of water selected by the user.
-            - price_value (optional, float): The price of the selected water volume.
-
-        Response:
-            - 200 OK: Returns a JSON object with a success message and the dispensing interval.
-                Example:
-                {
-                    "message": "OK",
-                    "dispensing_interval": <float>
-                }
-            - 500 Internal Server Error: Returns a JSON object with an error message if an exception occurs.
-                Example:
-                {
-                    "error": "<error_message>"
-                }
-
-        Functionality:
-            - Extracts `volume_value` and `price_value` from the request body, if provided.
-            - Updates the `swave` object with the selected volume and price.
-            - Calculates the dispensing interval using `swave.get_dispensing_interval()`.
-            - Initiates the dispensing process by setting the dispensing state to True.
-            - Returns the dispensing interval in the response.
-
-        Raises:
-            - Exception: Captures and returns any unexpected errors during processing.
-        """
+@app.route("/coinslot/inserted_amount", methods=["GET"])
+def get_inserted_amount():
     try:
-        _data = request.get_json()
-        if "volume_value" in _data:
-            swave.volume_selected = _data["volume_value"]
-        if "price_value" in _data:
-            swave.price_selected = _data["price_value"]
+        return jsonify({"inserted_amount": swave.get_inserted_amount()}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
-        # Get the required interval
-        _interval: float = swave.get_dispensing_interval()
 
-        # Funtion to start dispensing
+@app.route("/buywater/process_order", methods=["POST"])
+def process_order():
+    try:
+        # Save order detais
+        data = request.get_json()
+        swave.set_selected_volume(data["volume_value"])
+        swave.set_selected_price(data["price_value"])
+
+        # Start dispensing
         swave.set_dispensing_state(True)
+        print("Dispense start")
 
-        return jsonify({"message": "OK", "dispensing_interval": _interval}), 200
+        # Check if water is below the minimum serving volume
+        swave.calculate_liters_consumed()
+
+        # Return interval
+        return jsonify({"message": "OK", "dispensing_interval": swave.calculate_dispensing_interval()}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": str(e)}), 500
 
 
-@flask.route("/buywater/stop/dispensing", methods=["GET"])
+@app.route("/stop/dispensing", methods=["GET"])
 def stop_dispensing():
     try:
-        # Function to stop dispensing
+        # Start dispensing
         swave.set_dispensing_state(False)
+        print("Dispense stopped")
+
         return jsonify({"message": "OK"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": str(e)}), 500
 
 
-@flask.route("/buywater/coin/value", methods=["GET"])
-def get_coinvalue():
+@app.route("/recycle/data", methods=["GET"])
+def get_recycle_data():
     try:
-        return jsonify({"inserted_coin": swave.get_inserted_coin()}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@flask.route("/gpio_controller", methods=["POST"])
-def gpio_controller():
-    try:
-        _response = request.get_json()
-        print(_response)
-        if "add_coin" in _response:
-            if _response["add_coin"]:
-                swave.increment_amount()
-
-        # Return data
         return jsonify({
-            "is_dispense": swave.get_is_dispense(),
-            "message": "OK"
+            "message": "OK",
+            "inserted_bottles": swave.get_bottle_counter(),
+            "reward_points": swave.get_reward_points()
         }), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": str(e)}), 500
+
+
+@app.route("/recycle/donate", methods=["GET"])
+def recycle_donate_bottles():
+    try:
+        swave.donate_bottles()
+        return jsonify({"messages": "OK"}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
 
 if __name__ == "__main__":
-    flask.run(host="0.0.0.0", port=5000, debug=False)
+    swave.main()
+    swave_gpio.main(swave)
+    print("[INFO] Server starting at http://0.0.0.0:5000")
+    app.run(debug=False, port=5000, host="0.0.0.0")
