@@ -1,8 +1,9 @@
 import signal
 import sys
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from app.swave import SWAVE, SWAVE_GPIO
+from app.swave import SWAVE, SWAVE_GPIO, SWAVE_MEMBERSHIP
+import os
 
 # Flask
 app: Flask = Flask(__name__)
@@ -11,8 +12,20 @@ CORS(app)
 # SWAVE class
 swave: SWAVE = SWAVE()
 swave_gpio: SWAVE_GPIO = SWAVE_GPIO()
+swave_membership = SWAVE_MEMBERSHIP()
 
 # Signal Handling for Cleanup
+
+# Serve React Frontend
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 
 def shutdown_handler(signum, frame) -> None:
@@ -24,6 +37,59 @@ def shutdown_handler(signum, frame) -> None:
 # Register signals (Ctrl+C and kill)
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
+
+
+# START: REWARD
+@app.route("/membership/addpoints", methods=["POST"])
+def add_points():
+    try:
+        # Get and validate request data
+        _data = request.get_json()
+        if not _data:
+            return jsonify({"message": "No data provided"}), 400
+
+        _code = _data.get("code")
+        _points = _data.get("reward_point")
+        _bottles = _data.get("bottles")
+
+        if not all([_code, _points is not None, _bottles is not None]):
+            return jsonify({"message": "Missing required parameters"}), 400
+
+        # Log received data for debugging
+        print(
+            f"Adding points - Code: {_code}, Points: {_points}, Bottles: {_bottles}")
+
+        # Call membership function
+        success = swave_membership.add_points(_code, _points, _bottles)
+
+        if success:
+            # Delete points
+            swave.set_reward_points(0.0)
+            swave.set_bottle_counter(0)
+            return jsonify({"message": "SUCCESS"}), 200
+        else:
+            return jsonify({"message": "Failed to add points - invalid code or system error"}), 200
+
+    except Exception as e:
+        # Log the full error for debugging
+        print(f"Error in add_points: {str(e)}", exc_info=True)
+        return jsonify({"message": f"Internal server error: {str(e)}"}), 500
+
+# END: MEMBERSHIP
+
+# START: Bottle
+
+
+@app.route("/recycle/clear", methods=["GET"])
+def remove_recycledata():  # To resolve unknown values from the start
+    try:
+        swave.set_bottle_counter(0)
+        swave.set_reward_points(0.0)
+        return jsonify({"message": "OK"}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 200
+
+# END: Bottle
 
 
 @app.route("/warnings", methods=["GET"])
@@ -57,6 +123,9 @@ def process_order():
 
         # Check if water is below the minimum serving volume
         swave.calculate_liters_consumed()
+
+        # Remove coinslot values
+        swave.set_inserted_amount(0)
 
         # Return interval
         return jsonify({"message": "OK", "dispensing_interval": swave.calculate_dispensing_interval()}), 200
@@ -98,6 +167,9 @@ def recycle_donate_bottles():
 
 
 if __name__ == "__main__":
+    # Configure static folder
+    app.static_folder = '../dist'  # Assuming your React build is in a 'dist' folder
+
     swave.main()
     swave_gpio.main(swave)
     print("[INFO] Server starting at http://0.0.0.0:5000")

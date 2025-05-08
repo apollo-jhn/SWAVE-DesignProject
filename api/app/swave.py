@@ -2,6 +2,62 @@ import threading
 import RPi.GPIO as GPIO
 import time
 import random
+import os
+import json
+
+
+class SWAVE_MEMBERSHIP():
+    """
+        This class also includes the database management
+    """
+
+    def __init__(self):
+        self.DB_FILE = 'database.json'
+        self.lock = threading.Lock()
+
+        # Check if the file exists
+        if not os.path.exists(self.DB_FILE):
+            # Initialize with an empty dict (or list, depending on your structure)
+            initial_data = {
+                "accounts": [],          # or provide default list here
+                "transactions": []
+            }
+            with open(self.DB_FILE, 'w') as f:
+                # or [] if using a list as root dawd
+                json.dump(initial_data, f, indent=4)
+
+    def readDatabase(self) -> dict:
+        with self.lock:
+            with open(self.DB_FILE, 'r') as f:
+                return json.load(f)
+
+    def writeDatabase(self, data):
+        with self.lock:
+            with open(self.DB_FILE, 'w') as f:
+                json.dump(data, f, indent=4)
+
+    # Class membership logic
+    def add_points(self, code: str, reward_points: float, bottles: int):
+        _database = self.readDatabase()
+
+        # First find if the code exists
+        account_found = None
+        for account in _database["accounts"]:
+            if account["code"] == code:
+                account_found = account
+                break
+
+        if account_found:
+            # Update the points
+            account_found["points"] += reward_points
+            account_found["bottles"] += bottles
+            self.writeDatabase(_database)
+            return True
+        else:
+            return False
+
+    def register(self):
+        pass
 
 
 class SWAVE():
@@ -32,8 +88,8 @@ class SWAVE():
         self.selected_price: int = 0
 
         # Recycling
-        self.bottle_counter: int = 0
-        self.reward_points: float = 0.0
+        self.bottle_counter: int = 10
+        self.reward_points: float = 1.0
 
         # Dispense
         self.dispensing_state: bool = False
@@ -88,6 +144,10 @@ class SWAVE():
             return self.dispensing_state
 
     # Setters
+    def set_inserted_amount(self, _value: int) -> None:
+        with self.lock:
+            self.inserted_amount = _value
+
     def set_warning_fullstorage(self, _value: bool):
         with self.lock:
             self.warning_fullstorage = _value

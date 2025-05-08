@@ -9,6 +9,20 @@ export function MachineUI_Bottle() {
   const [reward_points, set_reward_points] = useState(0.0);
 
   useEffect(() => {
+    async function get_cleaned() {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/recycle/clear`
+      );
+      if (response.status == 200) {
+        console.log("Successfully cleaned the recycle data.");
+      } else {
+        console.log("Clearing the recycle data has not been completed.");
+      }
+    }
+    get_cleaned();
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
 
     const _fetchdata = async () => {
@@ -45,6 +59,15 @@ export function MachineUI_Bottle() {
         },
       });
     }
+  };
+
+  const redeemPoints = () => {
+    navigate("/machineui/recycle/redeem", {
+      state: {
+        inserted_bottle_count,
+        reward_points,
+      },
+    });
   };
 
   return (
@@ -117,6 +140,8 @@ export function MachineUI_Bottle() {
         </button>
         {/* Redeem Points */}
         <button
+          onClick={redeemPoints}
+          disabled={inserted_bottle_count > 0 ? false : true}
           className={`${
             inserted_bottle_count > 0 ? "bg-blue-700" : "bg-gray-700"
           } text-2xl rounded-2xl font-bold shadow-lg transition-colors py-4`}

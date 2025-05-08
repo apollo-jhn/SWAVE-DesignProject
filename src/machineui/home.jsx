@@ -37,7 +37,6 @@ export function MachineUI_Home() {
       const { is_low_water, is_storage_full } = response.data;
 
       setIsLowWater(is_low_water);
-      console.log(is_low_water)
       setIsFullStorage(is_storage_full);
       setLastUpdated(new Date());
 

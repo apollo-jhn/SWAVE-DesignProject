@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     watch: {
       // Ignore any changes in the /api folder
-      ignored: ['**/api/**']
+      ignored: ['**/api/**', "database.json"]
     }
   }
 });
