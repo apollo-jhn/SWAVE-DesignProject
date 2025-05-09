@@ -77,6 +77,52 @@ def add_points():
 
 # END: MEMBERSHIP
 
+
+@app.route("/membership/signin", methods=["POST"])
+def membership_login():
+    try:
+        _credential = request.get_json()
+        _username = _credential["username"]
+        _password = _credential["password"]
+        return swave_membership.login(_username, _password)
+    except Exception as e:
+        return jsonify({"messsage": str(e)}), 500
+
+
+@app.route("/membership/getdata", methods=["POST"])
+def membershipGetData():
+    _request = request.get_json()
+    if "code" in _request:
+        return swave_membership.getData(_request["code"]), 200
+
+
+@app.route("/redeem/item", methods=["POST"])
+def redeem_item():
+    try:
+        _data = request.get_json()
+        _code = _data["code"]
+        _itemID = _data["itemId"]
+        _pointsCost = _data["pointsCost"]
+        swave_membership.redeemItem(_code, _itemID, _pointsCost)
+        return jsonify({"message": "OK"}), 200
+    except Exception as e:
+        return jsonify({"messsage": str(e)}), 500
+
+
+@app.route("/membership/register", methods=["POST"])
+def membership_register():
+    try:
+        _data = request.get_json()
+        _message = swave_membership.register(
+            _data["student_number"],
+            _data["name"],
+            _data["email"],
+            _data["password"]
+        )
+        return jsonify(_message), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
 # START: Bottle
 
 
@@ -124,8 +170,9 @@ def process_order():
         # Check if water is below the minimum serving volume
         swave.calculate_liters_consumed()
 
-        # Remove coinslot values
-        swave.set_inserted_amount(0)
+        # Remove coinslot values #
+        swave.set_inserted_amount(
+            swave.get_inserted_amount() - swave.get_selected_price())
 
         # Return interval
         return jsonify({"message": "OK", "dispensing_interval": swave.calculate_dispensing_interval()}), 200

@@ -7,10 +7,6 @@ import json
 
 
 class SWAVE_MEMBERSHIP():
-    """
-        This class also includes the database management
-    """
-
     def __init__(self):
         self.DB_FILE = 'database.json'
         self.lock = threading.Lock()
@@ -26,6 +22,72 @@ class SWAVE_MEMBERSHIP():
                 # or [] if using a list as root dawd
                 json.dump(initial_data, f, indent=4)
 
+    def login(self, username, password):
+        _db = self.readDatabase()
+        for student in _db["accounts"]:
+            if (
+                student["student_number"] == username
+                or student["email"] == username
+                or student["code"] == username
+            ):
+                # Now verify password
+                if student["password"] == password:
+                    return {
+                        "access": "true",
+                        "redirectUrl": f"/dashboard/{student['code']}",
+                        "code": student[
+                            "code"
+                        ],  # Also return the code for session management
+                    }
+                else:
+                    # Password doesn't match
+                    return {"access": "false", "message": "Invalid password"}
+
+        # No matching account found
+        return {"access": "false", "message": "Account not found"}
+
+    def getData(self, code):
+        _db = self.readDatabase()
+        for student in _db["accounts"]:
+            if student["code"] == code:
+                return {
+                    "points": student["points"],
+                    "student_number": student["student_number"],
+                    "name": student["name"],
+                    "email": student["email"],
+                }
+
+        # Only print error if no student found after checking all accounts
+        print(f"ERROR: GETDATA ERROR - No student found with code: {code}")
+        return None  # Explicitly return None to indicate no match found
+
+    def redeemItem(self, code: str, itemId: int, pointCost: float):
+        _db = self.readDatabase()
+
+        # First find if the code exists
+        account_found = None
+        for account in _db["accounts"]:
+            if account["code"] == code:
+                account_found = account
+                break
+
+        if account_found:
+            # Minus the points
+            account_found["points"] -= pointCost
+
+            # Write back to the database
+            self.writeDatabase(_db)
+
+            # Clear points
+            # self.clearBottleDataValues()
+
+            return {
+                "message": "Point Added Successfully. Thank you!",
+                "status": "success",
+            }
+        else:
+            return {"message": "User code was not found.", "status": "failed"}
+
     def readDatabase(self) -> dict:
         with self.lock:
             with open(self.DB_FILE, 'r') as f:
@@ -37,6 +99,7 @@ class SWAVE_MEMBERSHIP():
                 json.dump(data, f, indent=4)
 
     # Class membership logic
+
     def add_points(self, code: str, reward_points: float, bottles: int):
         _database = self.readDatabase()
 
@@ -56,8 +119,51 @@ class SWAVE_MEMBERSHIP():
         else:
             return False
 
-    def register(self):
-        pass
+    def codeGenerator(self, lower_bound: int = 0, upper_bound: int = 9) -> str:
+        # Load database
+        _db = self.readDatabase()
+
+        # Get all existing codes first for faster checking
+        existing_codes = {
+            account["code"] for account in _db["accounts"] if "code" in account
+        }
+
+        # Generate a 4-digit code and check for duplicates
+        while True:
+            # Generate random 4-digit code
+            code = "".join(
+                str(random.randint(lower_bound, upper_bound)) for _ in range(4)
+            )
+            if code not in existing_codes:
+                return code
+
+    def register(self, student_number: str, name: str, email: str, password: str):
+        _db = self.readDatabase()
+        for student in _db["accounts"]:
+            if student["student_number"] == student_number:
+                return {
+                    "message": "student number already exist!",
+                    "status": "failed",
+                }
+
+        _code = self.codeGenerator()
+
+        _new_account = {
+            "student_number": student_number,
+            "name": name,
+            "email": email,
+            "password": password,
+            "points": 0.0,
+            "bottles": 0,
+            "code": _code,
+        }
+
+        _db["accounts"].append(_new_account)
+
+        # Write the updated database to the file
+        self.writeDatabase(_db)
+
+        return {"message": "Registered Thank you!.", "code": _code, "status": "success"}
 
 
 class SWAVE():
@@ -88,8 +194,8 @@ class SWAVE():
         self.selected_price: int = 0
 
         # Recycling
-        self.bottle_counter: int = 10
-        self.reward_points: float = 1.0
+        self.bottle_counter: int = 0
+        self.reward_points: float = 0.0
 
         # Dispense
         self.dispensing_state: bool = False
@@ -119,6 +225,10 @@ class SWAVE():
         return (self.selected_volume / 1000) * self.INTERVAL_PER_1_LITER_MS
 
     # Getters
+    def get_selected_price(self):
+        with self.lock:
+            return self.selected_price
+
     def get_bottle_counter(self):
         with self.lock:
             return self.bottle_counter

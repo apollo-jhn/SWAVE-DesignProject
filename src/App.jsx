@@ -7,15 +7,19 @@ import { MachineUI_Reward } from "./machineui/reward";
 import { MachineUI_Bottle } from "./machineui/bottle";
 import { MachineUI_Redeem } from "./machineui/redeem";
 import { MachineUI_ThankYou } from "./machineui/thankyou";
-import { Reward_Home } from "./rewards/home";
 import MachineUI_Layout from "./machineui/layout";
+import { Membership_Home } from "./membership/home";
+import { Membership_Register } from "./membership/register";
+import { Membership_Dashboard } from "./membership/dashboard";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Registration Page */}
-        <Route path="/" element={<Reward_Home />} />
+        <Route path="/" element={<Membership_Home />} />
+        <Route path="/register" element={<Membership_Register />} />
+        <Route path="/dashboard/:code" element={<Membership_Dashboard />} />
 
         {/* Machine User Interface */}
         <Route path="/machineui" element={<MachineUI_Layout />}>
