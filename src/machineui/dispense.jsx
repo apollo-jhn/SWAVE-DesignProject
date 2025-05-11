@@ -8,15 +8,15 @@ export function MachineUI_Dispense() {
   const location = useLocation();
   const { dispensing_interval } = location.state || {};
   const [isDispensing, setIsDispensing] = useState(true);
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   const dispense_complete = async () => {
     if (!isDispensing) return; // Prevent double calls
     setIsDispensing(false);
 
     try {
-      const response = await axios.get(
-        import.meta.env.VITE_API_BASE_URL + "/stop/dispensing"
-      );
+      const response = await axios.get(API_BASE_URL + "/stop/dispensing");
 
       if (response.status === 200) {
         navigation("/machineui/thankyou", {

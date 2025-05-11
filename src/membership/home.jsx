@@ -10,6 +10,8 @@ export function Membership_Home() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -26,7 +28,7 @@ export function Membership_Home() {
 
     try {
       const { data } = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/membership/signin`,
+        `${API_BASE_URL}/membership/signin`,
         {
           username: credentials.account_credentials,
           password: credentials.password,

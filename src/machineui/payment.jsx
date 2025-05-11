@@ -9,13 +9,15 @@ export function MachineUI_Payment() {
   const [coinsInserted, setCoinsInserted] = useState(0);
   const remainingPayment = price_value - coinsInserted;
   const POLLING_TIME_MS = 250;
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   useEffect(() => {
     const timer = setInterval(() => {
       const _fetchdata = async () => {
         try {
           const _request = await axios.get(
-            import.meta.env.VITE_API_BASE_URL + "/coinslot/inserted_amount"
+            API_BASE_URL + "/coinslot/inserted_amount"
           );
           // console.log(_request.data); // or do something with the data
           setCoinsInserted(_request.data.inserted_amount);
@@ -34,7 +36,7 @@ export function MachineUI_Payment() {
     try {
       // Send order data and get the interval and send it to the dispensing page.
       const response = await axios.post(
-        import.meta.env.VITE_API_BASE_URL + "/buywater/process_order",
+        API_BASE_URL + "/buywater/process_order",
         {
           volume_value,
           price_value,

@@ -15,6 +15,8 @@ export function Membership_Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registrationCode, setRegistrationCode] = useState("");
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   // Load registration success from sessionStorage (in case of re-render)
   useEffect(() => {
@@ -82,7 +84,7 @@ export function Membership_Register() {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/membership/register`,
+        `${API_BASE_URL}/membership/register`,
         {
           student_number: formData.student_number.toString(),
           name: formData.name,

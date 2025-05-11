@@ -15,6 +15,8 @@ export function Membership_Dashboard() {
   const [redeemError, setRedeemError] = useState("");
   const [redeemSuccess, setRedeemSuccess] = useState("");
   const navigate = useNavigate();
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   // Redeemable items data
   const redeemableItems = [
@@ -48,10 +50,9 @@ export function Membership_Dashboard() {
   // Function to fetch user data
   const fetchUserData = async () => {
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/membership/getdata`,
-        { code }
-      );
+      const response = await axios.post(`${API_BASE_URL}/membership/getdata`, {
+        code,
+      });
 
       const data = response.data;
 
@@ -86,14 +87,11 @@ export function Membership_Dashboard() {
         throw new Error("You don't have enough points for this item");
       }
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/redeem/item`,
-        {
-          code,
-          itemId,
-          pointsCost: selectedItem.points,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/redeem/item`, {
+        code,
+        itemId,
+        pointsCost: selectedItem.points,
+      });
 
       setUserData((prev) => ({
         ...prev,

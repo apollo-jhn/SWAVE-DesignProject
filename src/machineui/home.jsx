@@ -13,6 +13,8 @@ export function MachineUI_Home() {
   const [currentTime, setCurrentTime] = useState(
     new Date().toLocaleTimeString()
   );
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -30,9 +32,7 @@ export function MachineUI_Home() {
   const fetchWarnings = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/warnings`
-      );
+      const response = await axios.get(`${API_BASE_URL}/warnings`);
 
       const { is_low_water, is_storage_full } = response.data;
 

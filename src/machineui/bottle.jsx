@@ -7,12 +7,12 @@ export function MachineUI_Bottle() {
   const POLLING_RATE_MS = 500;
   const [inserted_bottle_count, set_inserted_bottle_count] = useState(0);
   const [reward_points, set_reward_points] = useState(0.0);
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   useEffect(() => {
     async function get_cleaned() {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/recycle/clear`
-      );
+      const response = await axios.get(`${API_BASE_URL}/recycle/clear`);
       if (response.status == 200) {
         console.log("Successfully cleaned the recycle data.");
       } else {

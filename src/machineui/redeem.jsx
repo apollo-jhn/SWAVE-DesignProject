@@ -9,6 +9,8 @@ export function MachineUI_Redeem() {
   const navigate = useNavigate();
   const location = useLocation();
   const { inserted_bottle_count, reward_points } = location.state || {};
+  const { protocol, hostname } = window.location;
+  const API_BASE_URL = `${protocol}//${hostname}:5000`;
 
   const handleNumberClick = (num) => {
     if (activeIndex < 4) {
@@ -25,9 +27,7 @@ export function MachineUI_Redeem() {
   };
 
   const donate_bottle = async () => {
-    const response = await axios.get(
-      import.meta.env.VITE_API_BASE_URL + "/recycle/donate"
-    );
+    const response = await axios.get(API_BASE_URL + "/recycle/donate");
     if (response.status == 200) {
       navigate("/machineui/thankyou", {
         state: {
@@ -50,7 +50,7 @@ export function MachineUI_Redeem() {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/membership/addpoints`,
+        `${API_BASE_URL}/membership/addpoints`,
         {
           code: _code,
           reward_point: _points,
